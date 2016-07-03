@@ -2,7 +2,7 @@ package com.mrozekma.taut;
 
 abstract class LazyLoadedObject {
 	private boolean isLoaded;
-	protected final TautConnection conn;
+	final TautConnection conn;
 	private final String id;
 
 	protected LazyLoadedObject(TautConnection conn, String id) {
@@ -20,14 +20,14 @@ abstract class LazyLoadedObject {
 
 	protected final void checkLoad() throws TautException {
 		if(!this.isLoaded) {
-			this.populate(this.load(this.id));
+			this.populate(this.load());
 			this.isLoaded = true;
 		}
 	}
 
 	public String getId() { return this.id; }
 
-	protected abstract JSONObject load(String id) throws TautException;
+	protected abstract JSONObject load() throws TautException;
 	protected abstract void populate(JSONObject json);
 
 	@Override public boolean equals(Object o) {

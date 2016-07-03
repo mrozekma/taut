@@ -1,5 +1,6 @@
 package com.mrozekma.taut;
 
+import com.sun.org.apache.xpath.internal.operations.Bool;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
@@ -9,9 +10,12 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
 
+import javax.websocket.Session;
+import java.awt.*;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.*;
+import java.util.List;
 
 public class TautConnection {
 	private static final String API_URL = "https://slack.com/api/%s";
@@ -34,7 +38,8 @@ public class TautConnection {
 		nvps.add(new BasicNameValuePair("token", this.token));
 		args.stream().forEach(k -> {
 			final String key = (String)k;
-			nvps.add(new BasicNameValuePair(key, args.getString(key)));
+			final Object val = args.get(key);
+			nvps.add(new BasicNameValuePair(key, val.toString()));
 		});
 		try {
 			post.setEntity(new UrlEncodedFormEntity(nvps));
@@ -59,6 +64,7 @@ public class TautConnection {
 		if(!rtn.getBoolean("ok")) {
 			throw new APIError(route, args, rtn);
 		}
+		System.out.println(rtn); //NO
 		return rtn;
 	}
 
@@ -74,6 +80,10 @@ public class TautConnection {
 		return TautChannel.getAll(this);
 	}
 
+	public TautChannel createChannel(String name) throws TautException {
+		return TautChannel.create(this, name);
+	}
+
 	public TautUser getUserById(String id) {
 		return TautUser.getById(this, id);
 	}
@@ -86,7 +96,36 @@ public class TautConnection {
 		return TautUser.getAll(this);
 	}
 
-	public Date resolveDate(long unixTs) {
+	public void revokeToken() throws TautException {
+		this.post("auth.revoke");
+	}
+
+	static Date dateApiToHost(long unixTs) {
 		return new Date(unixTs * 1000);
+	}
+
+	static Date dateApiToHost(String unixTs) {
+		return dateApiToHost((long)Double.parseDouble(unixTs));
+	}
+
+	static String dateHostToApi(Date date) {
+		return "" + ((double)date.getTime() / 1000.0);
+	}
+
+	static Color colorApiToHost(String color) {
+		if(color.startsWith("#")) {
+			color = color.substring(1);
+		}
+		if(color.length() != 6) {
+			throw new NumberFormatException("Bad color: " + color);
+		}
+		final int r = Integer.parseInt(color.substring(0, 2), 16);
+		final int g = Integer.parseInt(color.substring(2, 4), 16);
+		final int b = Integer.parseInt(color.substring(4, 6), 16);
+		return new Color(r, g, b);
+	}
+
+	static String colorHostToApi(Color color) {
+		return String.format("#%02x%02x%02x", color.getRed(), color.getGreen(), color.getBlue());
 	}
 }

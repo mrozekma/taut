@@ -48,8 +48,17 @@ public class TautUser extends LazyLoadedObject {
 	public Optional<String> getTwoFactorType() throws TautException { this.checkLoad(); return this.twoFactorType; }
 //	public boolean hasFiles() throws TautException { this.checkLoad(); return this.hasFiles; }
 
-	@Override protected JSONObject load(String id) throws TautException {
-		return this.conn.post("users.info", new JSONObject().put("user", id)).getJSONObject("user");
+	private JSONObject post(String route) throws TautException {
+		return this.post(route, new JSONObject());
+	}
+
+	private JSONObject post(String route, JSONObject args) throws TautException {
+		args.put("user", this.getId());
+		return this.conn.post(route, args);
+	}
+
+	@Override protected JSONObject load() throws TautException {
+		return this.post("users.info").getJSONObject("user");
 	}
 
 	@Override protected void populate(JSONObject json) {
@@ -94,6 +103,10 @@ public class TautUser extends LazyLoadedObject {
 //		this.hasFiles = json.getBoolean("has_files");
 	}
 
+	private JSONObject makeJSONObject() {
+		return new JSONObject().put("user", this.getId());
+	}
+
 	public static TautUser getById(TautConnection conn, String id) {
 		return new TautUser(conn, id);
 	}
@@ -111,6 +124,6 @@ public class TautUser extends LazyLoadedObject {
 	}
 
 	public static List<TautUser> getAll(TautConnection conn) throws TautException {
-		return conn.post("users.list").getJSONArray("members").<JSONObject>stream().map(json -> new TautUser(conn, json)).collect(Collectors.toList());
+		return conn.post("users.list").streamObjectArray("members").map(json -> new TautUser(conn, json)).collect(Collectors.toList());
 	}
 }

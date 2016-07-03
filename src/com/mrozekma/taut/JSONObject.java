@@ -4,6 +4,7 @@ import org.json.JSONException;
 
 import java.lang.reflect.Array;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 public class JSONObject extends org.json.JSONObject {
@@ -179,5 +180,13 @@ public class JSONObject extends org.json.JSONObject {
 
 	public Stream stream() {
 		return this.keySet().stream();
+	}
+
+	public Stream<JSONObject> streamObjectArray(String key) throws JSONException {
+		return this.has(key) ? this.getJSONArray(key).<JSONObject>stream() : Stream.empty();
+	}
+
+	public <T, U> Optional<T> getOpt(String key, Function<U, T> fn) {
+		return this.has(key) ? Optional.of(fn.apply(this.getT(key))) : Optional.empty();
 	}
 }
