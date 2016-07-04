@@ -42,7 +42,7 @@ public class TautChannel extends LazyLoadedObject {
 
 	@Override protected void populate(JSONObject json) {
 		this.name = json.getString("name");
-		this.created = TautConnection.dateApiToHost(json.getLong("created"));
+		this.created = TautConnection.tsApiToHost(json.getLong("created"));
 		this.creator = this.conn.getUserById(json.getString("creator"));
 		this.isArchived = json.getBoolean("is_archived");
 		this.isGeneral = json.getBoolean("is_general");
@@ -81,6 +81,23 @@ public class TautChannel extends LazyLoadedObject {
 		return new HistoryIterable(this, latest, oldest, inclusive, count, unreads);
 	}
 
+	public void invite(TautUser user) throws TautException {
+		this.post("channels.invite", new JSONObject().put("user", user.getId()));
+	}
+
+	public void join() throws TautException {
+		// Why does this take a name instead of an ID
+		this.post("channels.join", new JSONObject().put("name", this.getName()));
+	}
+
+	public void kick(TautUser user) throws TautException {
+		this.post("channels.kick", new JSONObject().put("user", user.getId()));
+	}
+
+	public void leave() throws TautException {
+		this.post("channels.leave");
+	}
+
 	public void rename(String name) throws TautException {
 		this.post("channels.rename", new JSONObject().put("name", name));
 	}
@@ -102,7 +119,7 @@ public class TautChannel extends LazyLoadedObject {
 				.putOpt("icon_url", msg.getIconUrl())
 				.putOpt("icon_emoji", msg.getIconEmoji());
 		final JSONObject res = this.conn.post("chat.postMessage", args);
-		msg.setSentTs(res.getString("ts"));
+		msg.setSentTs(TautConnection.tsApiToHost(res.getDouble("ts")));
 		return msg;
 	}
 

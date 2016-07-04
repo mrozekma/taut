@@ -1,6 +1,7 @@
 package com.mrozekma.taut;
 
 import java.awt.*;
+import java.util.Date;
 import java.util.Optional;
 
 public class TautAttachment {
@@ -19,13 +20,28 @@ public class TautAttachment {
 	private Optional<String> fallback, pretext, authorName, authorLink, authorIcon, title, titleLink, text, imageUrl, thumbUrl, footer, footerIcon;
 	private Optional<Color> color;
 	private Field[] fields;
-	private Optional<Integer> ts;
+	private Optional<Date> ts;
 
 	public TautAttachment(TautConnection conn) {
-		this(conn, "", Color.BLACK, "", "", "", "", "", "", "", new Field[0], "", "", "", "", 0);
+		this.conn = conn;
+		this.fallback = Optional.empty();
+		this.color = Optional.empty();
+		this.pretext = Optional.empty();
+		this.authorName = Optional.empty();
+		this.authorLink = Optional.empty();
+		this.authorIcon = Optional.empty();
+		this.title = Optional.empty();
+		this.titleLink = Optional.empty();
+		this.text = Optional.empty();
+		this.fields = new Field[0];
+		this.imageUrl = Optional.empty();
+		this.thumbUrl = Optional.empty();
+		this.footer = Optional.empty();
+		this.footerIcon = Optional.empty();
+		this.ts = Optional.empty();
 	}
 
-	public TautAttachment(TautConnection conn, String fallback, Color color, String pretext, String authorName, String authorLink, String authorIcon, String title, String titleLink, String text, Field[] fields, String imageUrl, String thumbUrl, String footer, String footerIcon, int ts) {
+	public TautAttachment(TautConnection conn, String fallback, Color color, String pretext, String authorName, String authorLink, String authorIcon, String title, String titleLink, String text, Field[] fields, String imageUrl, String thumbUrl, String footer, String footerIcon, Date ts) {
 		this.conn = conn;
 		this.fallback = Optional.of(fallback);
 		this.color = Optional.of(color);
@@ -60,7 +76,7 @@ public class TautAttachment {
 		this.thumbUrl = json.getOpt("thumb_url");
 		this.footer = json.getOpt("footer");
 		this.footerIcon = json.getOpt("footer_icon");
-		this.ts = json.has("ts") ? Optional.of(json.getInt("ts")) : Optional.empty();
+		this.ts = json.has("ts") ? Optional.of(TautConnection.tsApiToHost(json.getDouble("ts"))) : Optional.empty();
 	}
 
 	public Optional<String> getFallback() { return this.fallback; }
@@ -77,7 +93,7 @@ public class TautAttachment {
 	public Optional<String> getFooterIcon() { return this.footerIcon; }
 	public Optional<Color> getColor() { return this.color; }
 	public Field[] getFields() { return this.fields; }
-	public Optional<Integer> getTs() { return this.ts; }
+	public Optional<Date> getTs() { return this.ts; }
 
 	public TautAttachment setFallback(String fallback) {
 		this.fallback = Optional.of(fallback);
@@ -149,7 +165,7 @@ public class TautAttachment {
 		return this;
 	}
 
-	public TautAttachment setTs(int ts) {
+	public TautAttachment setTs(Date ts) {
 		this.ts = Optional.of(ts);
 		return this;
 	}

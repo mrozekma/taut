@@ -38,10 +38,10 @@ public class TautReceivedMessage {
 		this.conn = channel.conn;
 		this.channel = channel;
 		this.text = json.getString("text");
-		this.current = new WhoWhen(json.getOpt("user", (String user) -> new TautUser(this.conn, user)), TautConnection.dateApiToHost(json.getString("ts")));
+		this.current = new WhoWhen(json.getOpt("user", (String user) -> new TautUser(this.conn, user)), TautConnection.tsApiToHost(json.getString("ts")));
 		if(json.has("edited")) {
 			final JSONObject edited = json.getJSONObject("edited");
-			this.edited = Optional.of(new WhoWhen(edited.getOpt("user", (String user) -> new TautUser(this.conn, user)), TautConnection.dateApiToHost(edited.getString("ts"))));
+			this.edited = Optional.of(new WhoWhen(edited.getOpt("user", (String user) -> new TautUser(this.conn, user)), TautConnection.tsApiToHost(edited.getString("ts"))));
 		} else {
 			this.edited = Optional.empty();
 		}

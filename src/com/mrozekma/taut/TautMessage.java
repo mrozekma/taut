@@ -1,5 +1,6 @@
 package com.mrozekma.taut;
 
+import java.util.Date;
 import java.util.Optional;
 
 public class TautMessage {
@@ -13,7 +14,7 @@ public class TautMessage {
 	private Optional<String> iconUrl = Optional.empty();
 	private Optional<String> iconEmoji = Optional.empty();
 
-	private Optional<String> sentTs = Optional.empty();
+	private Optional<Date> sentTs = Optional.empty();
 
 	public TautMessage(String text) {
 		this(text, false, true, false, true, false);
@@ -85,9 +86,9 @@ public class TautMessage {
 		return this;
 	}
 
-	Optional<String> getSentTs() { return this.sentTs; }
+	Optional<Date> getSentTs() { return this.sentTs; }
 
-	TautMessage setSentTs(String ts) {
+	TautMessage setSentTs(Date ts) {
 		this.sentTs = Optional.of(ts);
 		return this;
 	}

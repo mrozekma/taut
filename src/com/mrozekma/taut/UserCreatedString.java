@@ -20,7 +20,7 @@ public class UserCreatedString {
 		this.conn = conn;
 		this.value = json.getString("value");
 		this.creator = json.getString("creator").isEmpty() ? Optional.empty() : Optional.of(this.conn.getUserById(json.getString("creator")));
-		this.lastSet = TautConnection.dateApiToHost(json.getLong("last_set"));
+		this.lastSet = TautConnection.tsApiToHost(json.getLong("last_set"));
 	}
 
 	public String getValue() {

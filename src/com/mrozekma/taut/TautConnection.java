@@ -1,6 +1,5 @@
 package com.mrozekma.taut;
 
-import com.sun.org.apache.xpath.internal.operations.Bool;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
@@ -10,7 +9,6 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
 
-import javax.websocket.Session;
 import java.awt.*;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -100,16 +98,16 @@ public class TautConnection {
 		this.post("auth.revoke");
 	}
 
-	static Date dateApiToHost(long unixTs) {
-		return new Date(unixTs * 1000);
+	static Date tsApiToHost(double unixTs) {
+		return new Date((long)(unixTs * 1000));
 	}
 
-	static Date dateApiToHost(String unixTs) {
-		return dateApiToHost((long)Double.parseDouble(unixTs));
+	static Date tsApiToHost(String unixTs) {
+		return tsApiToHost(Double.parseDouble(unixTs));
 	}
 
-	static String dateHostToApi(Date date) {
-		return "" + ((double)date.getTime() / 1000.0);
+	static double tsHostToApi(Date date) {
+		return ((double)date.getTime() / 1000.0);
 	}
 
 	static Color colorApiToHost(String color) {

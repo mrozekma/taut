@@ -168,6 +168,10 @@ public class JSONObject extends org.json.JSONObject {
 		return this;
 	}
 
+	public JSONObject put(String key, Date ts) throws JSONException {
+		return this.put(key, TautConnection.tsHostToApi(ts));
+	}
+
 	public JSONObject putOnce(String key, Object value) throws JSONException {
 		super.putOnce(key, value);
 		return this;
