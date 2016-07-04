@@ -98,8 +98,20 @@ public class TautChannel extends LazyLoadedObject {
 		this.post("channels.leave");
 	}
 
+	public void markRead(Date ts) throws TautException {
+		this.post("channels.mark", new JSONObject().put("ts", ts));
+	}
+
 	public void rename(String name) throws TautException {
 		this.post("channels.rename", new JSONObject().put("name", name));
+	}
+
+	public void setPurpose(String purpose) throws TautException {
+		this.post("channels.setPurpose", new JSONObject().put("purpose", purpose));
+	}
+
+	public void setTopic(String topic) throws TautException {
+		this.post("channels.setTopic", new JSONObject().put("topic", topic));
 	}
 
 	public void unarchive() throws TautException {
