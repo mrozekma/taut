@@ -110,4 +110,29 @@ public class TautMessage {
 		}
 		this.sentChannel.get().post("chat.delete", new JSONObject().put("ts", this.sentTs.get()).put("as_user", asUser));
 	}
+
+	public void update(TautMessage newMessage) throws TautException {
+		if(!(this.sentTs.isPresent() && this.sentChannel.isPresent())) {
+			throw new TautException("Message has not been sent");
+		}
+		//TODO Commented out the arguments that aren't in the chat.update docs, but I suspect they do exist
+		final JSONObject args = new JSONObject()
+				.put("ts", this.getSentTs().get())
+				.put("text", newMessage.getText())
+				.put("parse", newMessage.getParse() ? "full" : "none")
+				.put("link_names", newMessage.getLinkNames() ? 1 : 0)
+//				.put("unfurl_links", msg.getUnfurlLinks())
+//				.put("unfurl_media", msg.getUnfurlMedia())
+				.putOpt("username", newMessage.getUsername())
+				.put("as_user", newMessage.getAsUser())
+//				.putOpt("icon_url", msg.getIconUrl())
+//				.putOpt("icon_emoji", msg.getIconEmoji())
+				;
+		final JSONObject res = this.getSentChannel().get().post("chat.update", args);
+		this.setSentTs(res.getString("ts"));
+	}
+
+	public void update(String newText) throws TautException {
+		this.update(new TautMessage(newText));
+	}
 }

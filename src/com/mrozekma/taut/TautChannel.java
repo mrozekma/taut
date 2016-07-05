@@ -122,26 +122,33 @@ public class TautChannel extends LazyLoadedObject {
 		this.post("channels.unarchive");
 	}
 
-	public TautMessage sendMessage(TautMessage msg) throws TautException {
+	public TautMessage sendMessage(TautMessage message) throws TautException {
 		final JSONObject args = new JSONObject()
-				.put("channel", this.getId())
-				.put("text", msg.getText())
-				.put("parse", msg.getParse() ? "full" : "none")
-				.put("link_names", msg.getLinkNames() ? 1 : 0) // Why is this randomly a number, Slack?
-				.put("unfurl_links", msg.getUnfurlLinks())
-				.put("unfurl_media", msg.getUnfurlMedia())
-				.putOpt("username", msg.getUsername())
-				.put("as_user", msg.getAsUser())
-				.putOpt("icon_url", msg.getIconUrl())
-				.putOpt("icon_emoji", msg.getIconEmoji());
-		final JSONObject res = this.conn.post("chat.postMessage", args);
-		msg.setSentTs(res.getString("ts"));
-		msg.setSentChannel(this);
-		return msg;
+				.put("text", message.getText())
+				.put("parse", message.getParse() ? "full" : "none")
+				.put("link_names", message.getLinkNames() ? 1 : 0)
+				.put("unfurl_links", message.getUnfurlLinks())
+				.put("unfurl_media", message.getUnfurlMedia())
+				.putOpt("username", message.getUsername())
+				.put("as_user", message.getAsUser())
+				.putOpt("icon_url", message.getIconUrl())
+				.putOpt("icon_emoji", message.getIconEmoji());
+		final JSONObject res = this.post("chat.postMessage", args);
+		message.setSentTs(res.getString("ts"));
+		message.setSentChannel(this);
+		return message;
 	}
 
-	public TautMessage sendMessage(String message) throws TautException {
-		return this.sendMessage(new TautMessage(message));
+	public TautMessage sendMessage(String text) throws TautException {
+		return this.sendMessage(new TautMessage(text));
+	}
+
+	public TautMessage sendMeMessage(String text) throws TautException {
+		final JSONObject res = this.post("chat.meMessage", new JSONObject().put("text", text));
+		final TautMessage message = new TautMessage(text);
+		message.setSentTs(res.getString("ts"));
+		message.setSentChannel(this);
+		return message;
 	}
 
 	public static TautChannel getById(TautConnection conn, String id) {
