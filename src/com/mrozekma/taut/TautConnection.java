@@ -40,7 +40,15 @@ public class TautConnection {
 			nvps.add(new BasicNameValuePair(key, val.toString()));
 		});
 		try {
-			post.setEntity(new UrlEncodedFormEntity(nvps));
+			final UrlEncodedFormEntity entity = new UrlEncodedFormEntity(nvps);
+			System.out.print("[Tx] "); //TODO Remove
+			try {
+				entity.writeTo(System.out);
+				System.out.println();
+			} catch(IOException e) {
+				System.out.println("(error)");
+			}
+			post.setEntity(entity);
 		} catch(UnsupportedEncodingException e) {
 			throw new RuntimeException(e);
 		}
@@ -62,7 +70,7 @@ public class TautConnection {
 		if(!rtn.getBoolean("ok")) {
 			throw new APIError(route, args, rtn);
 		}
-		System.out.println(rtn); //NO
+		System.out.printf("[Rx] %s\n", rtn); //TODO Remove
 		return rtn;
 	}
 
@@ -98,16 +106,18 @@ public class TautConnection {
 		this.post("auth.revoke");
 	}
 
-	static Date tsApiToHost(double unixTs) {
-		return new Date((long)(unixTs * 1000));
+	// ts is frequently used as an ID, so in those cases we keep them as strings to avoid precision problems when converting back.
+	// This is only used if we really need the date for something
+	static Date tsApiToHost(String ts) {
+		return new Date((long)(Double.parseDouble(ts) * 1000));
 	}
 
-	static Date tsApiToHost(String unixTs) {
-		return tsApiToHost(Double.parseDouble(unixTs));
+	static Date tsApiToHost(long ts) {
+		return new Date(ts * 1000);
 	}
 
-	static double tsHostToApi(Date date) {
-		return ((double)date.getTime() / 1000.0);
+	static String tsHostToApi(Date ts) {
+		return "" + (ts.getTime() * 1000);
 	}
 
 	static Color colorApiToHost(String color) {

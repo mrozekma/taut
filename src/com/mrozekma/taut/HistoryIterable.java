@@ -25,7 +25,7 @@ public class HistoryIterable implements Iterable<TautReceivedMessage> {
 	@Override public Iterator<TautReceivedMessage> iterator() {
 		return new Iterator<TautReceivedMessage>() {
 			private final JSONObject request = new JSONObject().putOpt("latest", latest).putOpt("oldest", oldest).put("inclusive", inclusive ? 1 : 0).put("count", count).put("unreads", unreads ? 1 : 0);
-			private Optional<Date> nextRequestLatest;
+			private Optional<String> nextRequestLatest;
 			private LinkedList<TautReceivedMessage> messages;
 
 			{
@@ -37,6 +37,7 @@ public class HistoryIterable implements Iterable<TautReceivedMessage> {
 				try {
 					res = channel.post("channels.history", request);
 				} catch(TautException e) {
+					// Can't throw TautException because we need to conform to the Iterable interface
 					throw new RuntimeException(e);
 				}
 				this.messages = new LinkedList<>(res.streamObjectArray("messages").map(message -> new TautReceivedMessage(channel, message)).collect(Collectors.toList()));

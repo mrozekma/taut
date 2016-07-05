@@ -7,15 +7,19 @@ import java.util.Optional;
 public class TautReceivedMessage {
 	public static class WhoWhen {
 		private final Optional<TautUser> user;
-		private final Date ts;
+		private final String ts;
 
-		WhoWhen(Optional<TautUser> user, Date ts) {
+		WhoWhen(Optional<TautUser> user, String ts) {
 			this.user = user;
 			this.ts = ts;
 		}
 
 		public Optional<TautUser> getUser() { return this.user; }
-		public Date getTs() { return this.ts; }
+		public String getTs() { return this.ts; }
+
+		public Date getTsDate() {
+			return TautConnection.tsApiToHost(this.ts);
+		}
 	}
 
 	private final TautConnection conn;
@@ -38,10 +42,10 @@ public class TautReceivedMessage {
 		this.conn = channel.conn;
 		this.channel = channel;
 		this.text = json.getString("text");
-		this.current = new WhoWhen(json.getOpt("user", (String user) -> new TautUser(this.conn, user)), TautConnection.tsApiToHost(json.getString("ts")));
+		this.current = new WhoWhen(json.getOpt("user", (String user) -> new TautUser(this.conn, user)), json.getString("ts"));
 		if(json.has("edited")) {
 			final JSONObject edited = json.getJSONObject("edited");
-			this.edited = Optional.of(new WhoWhen(edited.getOpt("user", (String user) -> new TautUser(this.conn, user)), TautConnection.tsApiToHost(edited.getString("ts"))));
+			this.edited = Optional.of(new WhoWhen(edited.getOpt("user", (String user) -> new TautUser(this.conn, user)), edited.getString("ts")));
 		} else {
 			this.edited = Optional.empty();
 		}

@@ -8,7 +8,7 @@ import java.util.stream.Collectors;
 // https://api.slack.com/types/channel
 public class TautChannel extends LazyLoadedObject {
 	private String name;
-	private Date created;
+	private long created;
 	private TautUser creator;
 	private boolean isArchived, isGeneral;
 	private List<TautUser> members;
@@ -27,7 +27,7 @@ public class TautChannel extends LazyLoadedObject {
 	}
 
 	public String getName() throws TautException { this.checkLoad(); return this.name; }
-	public Date getCreated() throws TautException { this.checkLoad(); return this.created; }
+	public long getCreated() throws TautException { this.checkLoad(); return this.created; }
 	public TautUser getCreator() throws TautException { this.checkLoad(); return this.creator; }
 	public boolean isArchived() throws TautException { this.checkLoad(); return this.isArchived; }
 	public boolean isGeneral() throws TautException { this.checkLoad(); return this.isGeneral; }
@@ -36,13 +36,17 @@ public class TautChannel extends LazyLoadedObject {
 	public UserCreatedString getPurpose() throws TautException { this.checkLoad(); return this.purpose; }
 	public boolean isMember() throws TautException { this.checkLoad(); return this.isMember; }
 
+	public Date getCreatedDate() throws TautException {
+		return TautConnection.tsApiToHost(this.getCreated());
+	}
+
 	@Override protected JSONObject load() throws TautException {
 		return this.post("channels.info").getJSONObject("channel");
 	}
 
 	@Override protected void populate(JSONObject json) {
 		this.name = json.getString("name");
-		this.created = TautConnection.tsApiToHost(json.getLong("created"));
+		this.created = json.getLong("created");
 		this.creator = this.conn.getUserById(json.getString("creator"));
 		this.isArchived = json.getBoolean("is_archived");
 		this.isGeneral = json.getBoolean("is_general");
@@ -131,7 +135,8 @@ public class TautChannel extends LazyLoadedObject {
 				.putOpt("icon_url", msg.getIconUrl())
 				.putOpt("icon_emoji", msg.getIconEmoji());
 		final JSONObject res = this.conn.post("chat.postMessage", args);
-		msg.setSentTs(TautConnection.tsApiToHost(res.getDouble("ts")));
+		msg.setSentTs(res.getString("ts"));
+		msg.setSentChannel(this);
 		return msg;
 	}
 

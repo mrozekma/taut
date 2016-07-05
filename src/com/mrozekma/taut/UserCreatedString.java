@@ -7,9 +7,9 @@ public class UserCreatedString {
 	private final TautConnection conn;
 	private final String value;
 	private final Optional<TautUser> creator;
-	private final Date lastSet;
+	private final long lastSet;
 
-	UserCreatedString(TautConnection conn, String value, Optional<TautUser> creator, Date lastSet) {
+	UserCreatedString(TautConnection conn, String value, Optional<TautUser> creator, long lastSet) {
 		this.conn = conn;
 		this.value = value;
 		this.creator = creator;
@@ -20,7 +20,7 @@ public class UserCreatedString {
 		this.conn = conn;
 		this.value = json.getString("value");
 		this.creator = json.getString("creator").isEmpty() ? Optional.empty() : Optional.of(this.conn.getUserById(json.getString("creator")));
-		this.lastSet = TautConnection.tsApiToHost(json.getLong("last_set"));
+		this.lastSet = json.getLong("last_set");
 	}
 
 	public String getValue() {
@@ -31,8 +31,12 @@ public class UserCreatedString {
 		return this.creator;
 	}
 
-	public Date getLastSet() {
+	public long getLastSet() {
 		return this.lastSet;
+	}
+
+	public Date getLastSetDate() {
+		return TautConnection.tsApiToHost(this.getLastSet());
 	}
 
 	@Override public String toString() {

@@ -1,6 +1,5 @@
 package com.mrozekma.taut;
 
-import java.util.Date;
 import java.util.Optional;
 
 public class TautMessage {
@@ -14,7 +13,8 @@ public class TautMessage {
 	private Optional<String> iconUrl = Optional.empty();
 	private Optional<String> iconEmoji = Optional.empty();
 
-	private Optional<Date> sentTs = Optional.empty();
+	private Optional<String> sentTs = Optional.empty();
+	private Optional<TautChannel> sentChannel = Optional.empty();
 
 	public TautMessage(String text) {
 		this(text, false, true, false, true, false);
@@ -86,10 +86,28 @@ public class TautMessage {
 		return this;
 	}
 
-	Optional<Date> getSentTs() { return this.sentTs; }
+	Optional<String> getSentTs() { return this.sentTs; }
 
-	TautMessage setSentTs(Date ts) {
+	TautMessage setSentTs(String ts) {
 		this.sentTs = Optional.of(ts);
 		return this;
+	}
+
+	Optional<TautChannel> getSentChannel() { return this.sentChannel; }
+
+	TautMessage setSentChannel(TautChannel sentChannel) {
+		this.sentChannel = Optional.of(sentChannel);
+		return this;
+	}
+
+	public void delete() throws TautException {
+		this.delete(true);
+	}
+
+	public void delete(boolean asUser) throws TautException {
+		if(!(this.sentTs.isPresent() && this.sentChannel.isPresent())) {
+			throw new TautException("Message has not been sent");
+		}
+		this.sentChannel.get().post("chat.delete", new JSONObject().put("ts", this.sentTs.get()).put("as_user", asUser));
 	}
 }
