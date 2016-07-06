@@ -106,6 +106,13 @@ public class TautConnection {
 		this.post("auth.revoke");
 	}
 
+	public java.util.Map<String, String> emojiList() throws TautException {
+		final JSONObject res = this.post("emoji.list");
+		return new Map<String, String>() {{
+			res.getJSONObject("emoji").forEach((String k, String v) -> this.put(k, v));
+		}};
+	}
+
 	// ts is frequently used as an ID, so in those cases we keep them as strings to avoid precision problems when converting back.
 	// This is only used if we really need the date for something
 	static Date tsApiToHost(String ts) {

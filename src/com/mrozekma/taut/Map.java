@@ -6,5 +6,3 @@ class Map<K, V> extends java.util.HashMap<K, V> {
 		return this;
 	}
 }
-
-class HTTPMap extends Map<String, String> {}

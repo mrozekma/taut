@@ -4,6 +4,7 @@ import org.json.JSONException;
 
 import java.lang.reflect.Array;
 import java.util.*;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -182,8 +183,12 @@ public class JSONObject extends org.json.JSONObject {
 		return this;
 	}
 
-	public Stream stream() {
-		return this.keySet().stream();
+	public Stream<String> stream() {
+		return ((Set<String>)this.keySet()).stream();
+	}
+
+	public <T> void forEach(BiConsumer<String, T> fn) {
+		this.stream().forEach(k -> fn.accept(k, this.getT(k)));
 	}
 
 	public Stream<JSONObject> streamObjectArray(String key) throws JSONException {

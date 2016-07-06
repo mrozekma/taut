@@ -29,13 +29,21 @@ public class TautReceivedMessage {
 	private final Optional<WhoWhen> edited;
 	private final TautAttachment[] attachments;
 
-	public TautReceivedMessage(TautChannel channel, String text, WhoWhen current, Optional<WhoWhen> edited, TautAttachment[] attachments) {
+	private final boolean starred;
+	private final TautChannel[] pins;
+	private final TautReaction[] reactions;
+
+	public TautReceivedMessage(TautChannel channel, String text, WhoWhen current, Optional<WhoWhen> edited, TautAttachment[] attachments, boolean starred, TautChannel[] pins, TautReaction[] reactions) {
 		this.conn = channel.conn;
 		this.channel = channel;
 		this.text = text;
 		this.current = current;
 		this.edited = edited;
 		this.attachments = attachments;
+
+		this.starred = starred;
+		this.pins = pins;
+		this.reactions = reactions;
 	}
 
 	public TautReceivedMessage(TautChannel channel, JSONObject json) {
@@ -50,6 +58,10 @@ public class TautReceivedMessage {
 			this.edited = Optional.empty();
 		}
 		this.attachments = json.streamObjectArray("attachments").map(attachment -> new TautAttachment(this.conn, attachment)).toArray(TautAttachment[]::new);
+
+		this.starred = json.optBoolean("is_starred", false);
+		this.pins = json.has("pinned_to") ? json.getJSONArray("pinned_to").<String>stream().map(id -> new TautChannel(this.conn, id)).toArray(TautChannel[]::new) : new TautChannel[0];
+		this.reactions = json.has("reactions") ? json.getJSONArray("reactions").<JSONObject>stream().map(js -> new TautReaction(this.conn, js)).toArray(TautReaction[]::new) : new TautReaction[0];
 	}
 
 	public TautChannel getChannel() { return this.channel; }
@@ -57,4 +69,7 @@ public class TautReceivedMessage {
 	public WhoWhen getCurrent() { return this.current; }
 	public Optional<WhoWhen> getEdited() { return this.edited; }
 	public TautAttachment[] getAttachments() { return this.attachments; }
+	public boolean getStarred() { return this.starred; }
+	public TautChannel[] getPins() { return this.pins; }
+	public TautReaction[] getReactions() { return this.reactions; }
 }
