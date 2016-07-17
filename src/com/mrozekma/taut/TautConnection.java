@@ -102,6 +102,18 @@ public class TautConnection {
 		return TautUser.getAll(this);
 	}
 
+	public FileIterable iterFiles() throws TautException {
+		return new FileIterable(this);
+	}
+
+	public FileIterable iterFiles(TautUser user) throws TautException {
+		return new FileIterable(this).setUser(user);
+	}
+
+	public FileIterable iterFiles(TautChannel channel) throws TautException {
+		return new FileIterable(this).setChannel(channel);
+	}
+
 	public void revokeToken() throws TautException {
 		this.post("auth.revoke");
 	}

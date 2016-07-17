@@ -126,6 +126,6 @@ public class TautUser extends LazyLoadedObject {
 	}
 
 	public static List<TautUser> getAll(TautConnection conn) throws TautException {
-		return conn.post("users.list").streamObjectArray("members").map(json -> new TautUser(conn, json)).collect(Collectors.toList());
+		return conn.post("users.list").<JSONObject>streamArray("members").map(json -> new TautUser(conn, json)).collect(Collectors.toList());
 	}
 }

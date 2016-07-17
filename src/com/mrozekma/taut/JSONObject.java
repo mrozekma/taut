@@ -191,8 +191,8 @@ public class JSONObject extends org.json.JSONObject {
 		this.stream().forEach(k -> fn.accept(k, this.getT(k)));
 	}
 
-	public Stream<JSONObject> streamObjectArray(String key) throws JSONException {
-		return this.has(key) ? this.getJSONArray(key).<JSONObject>stream() : Stream.empty();
+	public <T> Stream<T> streamArray(String key) throws JSONException {
+		return this.has(key) ? this.getJSONArray(key).<T>stream() : Stream.empty();
 	}
 
 	public <T, U> Optional<T> getOpt(String key, Function<U, T> fn) {

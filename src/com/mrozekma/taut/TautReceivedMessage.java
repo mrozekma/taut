@@ -57,7 +57,7 @@ public class TautReceivedMessage {
 		} else {
 			this.edited = Optional.empty();
 		}
-		this.attachments = json.streamObjectArray("attachments").map(attachment -> new TautAttachment(this.conn, attachment)).toArray(TautAttachment[]::new);
+		this.attachments = json.<JSONObject>streamArray("attachments").map(attachment -> new TautAttachment(this.conn, attachment)).toArray(TautAttachment[]::new);
 
 		this.starred = json.optBoolean("is_starred", false);
 		this.pins = json.has("pinned_to") ? json.getJSONArray("pinned_to").<String>stream().map(id -> new TautChannel(this.conn, id)).toArray(TautChannel[]::new) : new TautChannel[0];

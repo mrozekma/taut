@@ -40,7 +40,7 @@ public class HistoryIterable implements Iterable<TautReceivedMessage> {
 					// Can't throw TautException because we need to conform to the Iterable interface
 					throw new RuntimeException(e);
 				}
-				this.messages = new LinkedList<>(res.streamObjectArray("messages").map(message -> new TautReceivedMessage(channel, message)).collect(Collectors.toList()));
+				this.messages = new LinkedList<>(res.<JSONObject>streamArray("messages").map(message -> new TautReceivedMessage(channel, message)).collect(Collectors.toList()));
 				this.nextRequestLatest = res.optBoolean("has_more", false) ? Optional.of(this.messages.getLast().getCurrent().getTs()) : Optional.empty();
 			}
 

@@ -70,7 +70,7 @@ public class TautAttachment {
 		this.title = json.getOpt("title");
 		this.titleLink = json.getOpt("title_link");
 		this.text = json.getOpt("text");
-		this.fields = json.streamObjectArray("fields").map(field -> new Field(field.getString("title"), field.getString("value"), field.getBoolean("short"))).toArray(Field[]::new);
+		this.fields = json.<JSONObject>streamArray("fields").map(field -> new Field(field.getString("title"), field.getString("value"), field.getBoolean("short"))).toArray(Field[]::new);
 		this.imageUrl = json.getOpt("image_url");
 		this.thumbUrl = json.getOpt("thumb_url");
 		this.footer = json.getOpt("footer");

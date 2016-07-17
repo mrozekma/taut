@@ -168,7 +168,7 @@ public class TautChannel extends LazyLoadedObject {
 	}
 
 	public static List<TautChannel> getAll(TautConnection conn) throws TautException {
-		return conn.post("channels.list").streamObjectArray("channels").map(json -> new TautChannel(conn, json)).collect(Collectors.toList());
+		return conn.post("channels.list").<JSONObject>streamArray("channels").map(json -> new TautChannel(conn, json)).collect(Collectors.toList());
 	}
 
 	public static TautChannel create(TautConnection conn, String name) throws TautException {
