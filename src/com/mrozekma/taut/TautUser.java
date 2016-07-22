@@ -109,6 +109,10 @@ public class TautUser extends LazyLoadedObject {
 		return new JSONObject().put("user", this.getId());
 	}
 
+	public FileIterable iterFiles() throws TautException {
+		return this.conn.iterFiles(this);
+	}
+
 	public static TautUser getById(TautConnection conn, String id) {
 		return new TautUser(conn, id);
 	}

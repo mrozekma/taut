@@ -2,6 +2,8 @@ package com.mrozekma.taut;
 
 import org.json.JSONException;
 
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -28,11 +30,13 @@ public class TautFile extends LazyLoadedObject {
 
 	private TautUser user;
 	private TautChannel[] channels;
-//	private TautGroup groups;
+	private TautChannel[] groups;
 //	private TautDirectMessage[] ims;
 	private TautChannel[] pinnedTo;
-//	private Optional<TautComment> initialComment;
+	private Optional<TautFileComment> initialComment;
 	private TautReaction[] reactions;
+
+	private Optional<TautFileComment[]> comments = Optional.empty();
 
 	private boolean editable;
 	// private boolean isExternal; // Seems superfluous given 'mode'
@@ -45,7 +49,8 @@ public class TautFile extends LazyLoadedObject {
 
 	TautFile(TautConnection conn, String id) {
 		super(conn, id);
-		if(!id.startsWith("F")) {
+		// Fc is a TautFileComment
+		if(!id.startsWith("F") || id.startsWith("Fc")) {
 			throw new IllegalArgumentException("Invalid file ID: " + id);
 		}
 	}
@@ -75,10 +80,10 @@ public class TautFile extends LazyLoadedObject {
 
 	public TautUser getUser() throws TautException { this.checkLoad(); return this.user; }
 	public TautChannel[] getChannels() throws TautException { this.checkLoad(); return this.channels; }
-//	public TautGroup[] getGroups() throws TautException { this.checkLoad(); return this.groups; }
+	public TautChannel[] getGroups() throws TautException { this.checkLoad(); return this.groups; }
 //	public TautDirectMessage[] getIms() throws TautException { this.checkLoad(); return this.ims; }
 	public TautChannel[] getPinnedTo() throws TautException { this.checkLoad(); return this.pinnedTo; }
-//	public Optional<TautComment> getInitialComment() throws TautException { this.checkLoad(); return this.initialComment; }
+	public Optional<TautFileComment> getInitialComment() throws TautException { this.checkLoad(); return this.initialComment; }
 
 	public boolean getEditable() throws TautException { this.checkLoad(); return this.editable; }
 //	public boolean getIsExternal() throws TautException { this.checkLoad(); return this.isExternal; }
@@ -89,11 +94,29 @@ public class TautFile extends LazyLoadedObject {
 
 	public Map<Integer, String> getThumbs() throws TautException { this.checkLoad(); return this.thumbs; }
 
-	private JSONObject post(String route) throws TautException {
+	public TautFileComment[] getComments() throws TautException {
+		this.checkLoad();
+		// Comments are loaded separately because they're not included in a files.list request, but they are in a files.info request
+		if(!this.comments.isPresent()) {
+			final List<TautFileComment> comments = new LinkedList<>();
+			final JSONObject req = new JSONObject().put("count", 1000);
+			int pages = 1;
+			for(int page = 1; page <= pages; page++) {
+				req.put("page", page);
+				final JSONObject res = this.post("files.info", req);
+				res.getJSONArray("comments").<JSONObject>stream().forEach(o -> comments.add(new TautFileComment(this, o)));
+				pages = res.getJSONObject("paging").getInt("pages");
+			}
+			this.comments = Optional.of(comments.toArray(new TautFileComment[0]));
+		}
+		return this.comments.get();
+	}
+
+	JSONObject post(String route) throws TautException {
 		return this.post(route, new JSONObject());
 	}
 
-	private JSONObject post(String route, JSONObject args) throws TautException {
+	JSONObject post(String route, JSONObject args) throws TautException {
 		args.put("file", this.getId());
 		return this.conn.post(route, args);
 	}
@@ -144,9 +167,10 @@ public class TautFile extends LazyLoadedObject {
 
 		this.user = new TautUser(this.conn, json.getString("user"));
 		this.channels = json.<String>streamArray("channels").map(id -> new TautChannel(this.conn, id)).toArray(TautChannel[]::new);
-//		this.groups = json.<JSONObject>streamArray("groups").map(id -> new TautGroup(this.conn, id)).toArray(TautGroup[]::new);
+		this.groups = json.<String>streamArray("groups").map(id -> new TautChannel(this.conn, id)).toArray(TautChannel[]::new);
 //		this.ims = json.<JSONObject>streamArray("ims").map(id -> new TautDirectMessage(this.conn, id)).toArray(TautDirectMessage[]::new);
 		this.pinnedTo = json.<String>streamArray("pinned_to").map(id -> new TautChannel(this.conn, id)).toArray(TautChannel[]::new);
+		this.initialComment = json.has("initial_comment") ? Optional.of(new TautFileComment(this, json.getJSONObject("initial_comment"))) : Optional.empty();
 
 		this.editable = json.optBoolean("editable", false);
 //		this.isExternal = json.optBoolean("is_external", false);

@@ -35,9 +35,6 @@ abstract class LazyLoadedObject {
 			return false;
 		}
 		final LazyLoadedObject other = (LazyLoadedObject)o;
-		if(!this.isLoaded || !other.isLoaded) {
-			return false;
-		}
 		return this.id.equals(other.id);
 	}
 

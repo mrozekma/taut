@@ -19,9 +19,13 @@ public class TautConnection {
 	private static final String API_URL = "https://slack.com/api/%s";
 
 	private final String token;
+	private final TautUser me;
 
-	public TautConnection(String token) throws IOException {
+	public TautConnection(String token) throws TautException {
 		this.token = token;
+
+		final JSONObject res = this.post("auth.test");
+		this.me = new TautUser(this, res.getString("user_id"));
 	}
 
 	JSONObject post(String route) throws TautException {
@@ -29,11 +33,14 @@ public class TautConnection {
 	}
 
 	JSONObject post(String route, JSONObject args) throws TautException {
+		return staticPost(route, args.put("token", this.token));
+	}
+
+	private static JSONObject staticPost(String route, JSONObject args) throws TautException {
 		final HttpClient client = HttpClients.createDefault();
 		final HttpPost post = new HttpPost(String.format(API_URL, route));
 
 		final List<NameValuePair> nvps = new LinkedList<>();
-		nvps.add(new BasicNameValuePair("token", this.token));
 		args.stream().forEach(k -> {
 			final String key = (String)k;
 			final Object val = args.get(key);
@@ -41,7 +48,7 @@ public class TautConnection {
 		});
 		try {
 			final UrlEncodedFormEntity entity = new UrlEncodedFormEntity(nvps);
-			System.out.print("[Tx] "); //TODO Remove
+			System.out.format("[Tx] %s ", route); //TODO Remove
 			try {
 				entity.writeTo(System.out);
 				System.out.println();
@@ -67,11 +74,16 @@ public class TautConnection {
 			throw new TautException(e);
 		}
 
+		System.out.printf("[Rx] %s\n", rtn); //TODO Remove
 		if(!rtn.getBoolean("ok")) {
 			throw new APIError(route, args, rtn);
 		}
-		System.out.printf("[Rx] %s\n", rtn); //TODO Remove
 		return rtn;
+	}
+
+	public static String oauthAccess(String clientId, String clientSecret, String code) throws TautException {
+		final JSONObject json = staticPost("oauth.access", new JSONObject().put("client_id", clientId).put("client_secret", clientSecret).put("code", code));
+		return json.getString("access_token");
 	}
 
 	public TautChannel getChannelById(String id) {
@@ -88,6 +100,10 @@ public class TautConnection {
 
 	public TautChannel createChannel(String name) throws TautException {
 		return TautChannel.create(this, name);
+	}
+
+	public TautUser getSelf() {
+		return this.me;
 	}
 
 	public TautUser getUserById(String id) {

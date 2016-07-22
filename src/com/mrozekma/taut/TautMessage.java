@@ -9,12 +9,16 @@ public class TautMessage {
 	private boolean unfurlLinks;
 	private boolean unfurlMedia;
 	private boolean asUser;
-	private Optional<String> username = Optional.empty();
-	private Optional<String> iconUrl = Optional.empty();
-	private Optional<String> iconEmoji = Optional.empty();
+	private Optional<String> username;
+	private Optional<String> iconUrl;
+	private Optional<String> iconEmoji;
 
 	private Optional<String> sentTs = Optional.empty();
 	private Optional<TautChannel> sentChannel = Optional.empty();
+
+	private static Optional<String> defaultUsername = Optional.empty();
+	private static Optional<String> defaultIconUrl = Optional.empty();
+	private static Optional<String> defaultIconEmoji = Optional.empty();
 
 	public TautMessage(String text) {
 		this(text, false, true, false, true, false);
@@ -27,6 +31,10 @@ public class TautMessage {
 		this.unfurlLinks = unfurlLinks;
 		this.unfurlMedia = unfurlMedia;
 		this.asUser = asUser;
+
+		this.username = defaultUsername;
+		this.iconUrl = defaultIconUrl;
+		this.iconEmoji = defaultIconEmoji;
 	}
 
 	public String getText() { return this.text; }
@@ -134,5 +142,17 @@ public class TautMessage {
 
 	public void update(String newText) throws TautException {
 		this.update(new TautMessage(newText));
+	}
+
+	// This interface is possibly terrible. Shrug
+	public static void setDefaultSender(String username, String icon) {
+		defaultUsername = Optional.of(username);
+		if(icon.startsWith(":")) {
+			defaultIconUrl = Optional.empty();
+			defaultIconEmoji = Optional.of(icon);
+		} else {
+			defaultIconUrl = Optional.of(icon);
+			defaultIconEmoji = Optional.empty();
+		}
 	}
 }

@@ -10,14 +10,14 @@ public class TautChannel extends LazyLoadedObject {
 	private String name;
 	private long created;
 	private TautUser creator;
-	private boolean isArchived, isGeneral;
+	private boolean isArchived, isGeneral, isPrivate;
 	private List<TautUser> members;
 	private UserCreatedString topic, purpose;
 	private boolean isMember;
 
 	TautChannel(TautConnection conn, String id) {
 		super(conn, id);
-		if(!id.startsWith("C")) {
+		if(!(id.startsWith("C") || id.startsWith("G"))) {
 			throw new IllegalArgumentException("Invalid channel ID: " + id);
 		}
 	}
@@ -31,6 +31,7 @@ public class TautChannel extends LazyLoadedObject {
 	public TautUser getCreator() throws TautException { this.checkLoad(); return this.creator; }
 	public boolean isArchived() throws TautException { this.checkLoad(); return this.isArchived; }
 	public boolean isGeneral() throws TautException { this.checkLoad(); return this.isGeneral; }
+	public boolean isPrivate() throws TautException { this.checkLoad(); return this.isPrivate; }
 	public List<TautUser> getMembers() throws TautException { this.checkLoad(); return this.members; }
 	public UserCreatedString getTopic() throws TautException { this.checkLoad(); return this.topic; }
 	public UserCreatedString getPurpose() throws TautException { this.checkLoad(); return this.purpose; }
@@ -41,7 +42,14 @@ public class TautChannel extends LazyLoadedObject {
 	}
 
 	@Override protected JSONObject load() throws TautException {
-		return this.post("channels.info").getJSONObject("channel");
+		switch(this.getId().charAt(0)) {
+		case 'C':
+			return this.post("channels.info").getJSONObject("channel");
+		case 'G':
+			return this.post("groups.info").getJSONObject("group");
+		default:
+			throw new IllegalStateException("Invalid channel ID: " + this.getId());
+		}
 	}
 
 	@Override protected void populate(JSONObject json) {
@@ -49,11 +57,16 @@ public class TautChannel extends LazyLoadedObject {
 		this.created = json.getLong("created");
 		this.creator = this.conn.getUserById(json.getString("creator"));
 		this.isArchived = json.getBoolean("is_archived");
-		this.isGeneral = json.getBoolean("is_general");
+		this.isGeneral = json.optBoolean("is_general", false);
+		this.isPrivate = json.optBoolean("is_group", false);
 		this.members = json.getJSONArray("members").<String>stream().map(this.conn::getUserById).collect(Collectors.toList());
 		this.topic = new UserCreatedString(this.conn, json.getJSONObject("topic"));
 		this.purpose = new UserCreatedString(this.conn, json.getJSONObject("purpose"));
-		this.isMember = json.getBoolean("is_member");
+		if(json.has("is_member")) {
+			this.isMember = json.getBoolean("is_member");
+		} else { // Groups don't have is_member. I think being able to see the group at all means we must be a member, but I check anyway
+			this.isMember = this.members.contains(this.conn.getSelf());
+		}
 	}
 
 	JSONObject post(String route) throws TautException {
@@ -61,12 +74,24 @@ public class TautChannel extends LazyLoadedObject {
 	}
 
 	JSONObject post(String route, JSONObject args) throws TautException {
+		if(route.startsWith(".")) {
+			switch(this.getId().charAt(0)) {
+			case 'C':
+				route = "channels" + route;
+				break;
+			case 'G':
+				route = "groups" + route;
+				break;
+			default:
+				throw new IllegalStateException("Invalid channel ID: " + this.getId());
+			}
+		}
 		args.put("channel", this.getId());
 		return this.conn.post(route, args);
 	}
 
 	public void archive() throws TautException {
-		this.post("channels.archive");
+		this.post(".archive");
 	}
 
 	public Iterable<TautReceivedMessage> history() throws TautException {
@@ -86,40 +111,40 @@ public class TautChannel extends LazyLoadedObject {
 	}
 
 	public void invite(TautUser user) throws TautException {
-		this.post("channels.invite", new JSONObject().put("user", user.getId()));
+		this.post(".invite", new JSONObject().put("user", user.getId()));
 	}
 
 	public void join() throws TautException {
 		// Why does this take a name instead of an ID
-		this.post("channels.join", new JSONObject().put("name", this.getName()));
+		this.post(".join", new JSONObject().put("name", this.getName()));
 	}
 
 	public void kick(TautUser user) throws TautException {
-		this.post("channels.kick", new JSONObject().put("user", user.getId()));
+		this.post(".kick", new JSONObject().put("user", user.getId()));
 	}
 
 	public void leave() throws TautException {
-		this.post("channels.leave");
+		this.post(".leave");
 	}
 
 	public void markRead(Date ts) throws TautException {
-		this.post("channels.mark", new JSONObject().put("ts", ts));
+		this.post(".mark", new JSONObject().put("ts", ts));
 	}
 
 	public void rename(String name) throws TautException {
-		this.post("channels.rename", new JSONObject().put("name", name));
+		this.post(".rename", new JSONObject().put("name", name));
 	}
 
 	public void setPurpose(String purpose) throws TautException {
-		this.post("channels.setPurpose", new JSONObject().put("purpose", purpose));
+		this.post(".setPurpose", new JSONObject().put("purpose", purpose));
 	}
 
 	public void setTopic(String topic) throws TautException {
-		this.post("channels.setTopic", new JSONObject().put("topic", topic));
+		this.post(".setTopic", new JSONObject().put("topic", topic));
 	}
 
 	public void unarchive() throws TautException {
-		this.post("channels.unarchive");
+		this.post(".unarchive");
 	}
 
 	public TautMessage sendMessage(TautMessage message) throws TautException {
@@ -151,6 +176,10 @@ public class TautChannel extends LazyLoadedObject {
 		return message;
 	}
 
+	public FileIterable iterFiles() throws TautException {
+		return this.conn.iterFiles(this);
+	}
+
 	public static TautChannel getById(TautConnection conn, String id) {
 		return new TautChannel(conn, id);
 	}
@@ -164,11 +193,20 @@ public class TautChannel extends LazyLoadedObject {
 				return channel;
 			}
 		}
+		for(TautChannel channel : getAllPrivate(conn)) {
+			if(channel.getName().equalsIgnoreCase(name)) {
+				return channel;
+			}
+		}
 		throw new TautException(String.format("Channel `%s' not found", name));
 	}
 
 	public static List<TautChannel> getAll(TautConnection conn) throws TautException {
 		return conn.post("channels.list").<JSONObject>streamArray("channels").map(json -> new TautChannel(conn, json)).collect(Collectors.toList());
+	}
+
+	public static List<TautChannel> getAllPrivate(TautConnection conn) throws TautException {
+		return conn.post("groups.list").<JSONObject>streamArray("groups").map(json -> new TautChannel(conn, json)).collect(Collectors.toList());
 	}
 
 	public static TautChannel create(TautConnection conn, String name) throws TautException {
