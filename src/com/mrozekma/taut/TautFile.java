@@ -189,6 +189,22 @@ public class TautFile extends LazyLoadedObject {
 		});
 	}
 
+	public TautFileComment addComment(String comment) throws TautException {
+		return this.addComment(comment, Optional.empty());
+	}
+
+	public TautFileComment addComment(String comment, TautChannel channel) throws TautException {
+		return this.addComment(comment, Optional.of(channel));
+	}
+
+	private TautFileComment addComment(String comment, Optional<TautChannel> channel) throws TautException {
+		final JSONObject req = new JSONObject();
+		req.put("comment", comment);
+		channel.ifPresent(c -> req.put("channel", c.getId()));
+		final JSONObject res = this.post("files.comments.add", req);
+		return new TautFileComment(this, res.getJSONObject("comment"));
+	}
+
 	public static abstract class Subtype {}
 
 	public static class HostedFile extends Subtype {}

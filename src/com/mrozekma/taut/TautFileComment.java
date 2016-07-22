@@ -33,6 +33,15 @@ public class TautFileComment extends LazyLoadedObject {
 		return TautConnection.tsApiToHost(this.getCreated());
 	}
 
+	JSONObject post(String route) throws TautException {
+		return this.post(route, new JSONObject());
+	}
+
+	JSONObject post(String route, JSONObject args) throws TautException {
+		args.put("id", this.getId());
+		return this.file.post(route, args);
+	}
+
 	@Override protected JSONObject load() throws TautException {
 		throw new UnsupportedOperationException();
 	}
@@ -41,5 +50,14 @@ public class TautFileComment extends LazyLoadedObject {
 		this.created = json.getLong("created");
 		this.user = new TautUser(this.conn, json.getString("user"));
 		this.comment = json.getString("comment");
+	}
+
+	public TautFileComment edit(String comment) throws TautException {
+		final JSONObject res = this.post("files.comments.edit", new JSONObject().put("comment", comment));
+		return new TautFileComment(this.file, res.getJSONObject("comment"));
+	}
+
+	public void delete() throws TautException {
+		this.post("files.comments.delete");
 	}
 }
