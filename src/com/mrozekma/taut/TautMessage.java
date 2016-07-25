@@ -117,6 +117,8 @@ public class TautMessage {
 			throw new TautException("Message has not been sent");
 		}
 		this.sentChannel.get().post("chat.delete", new JSONObject().put("ts", this.sentTs.get()).put("as_user", asUser));
+		this.sentTs = Optional.empty();
+		this.sentChannel = Optional.empty();
 	}
 
 	public void update(TautMessage newMessage) throws TautException {

@@ -30,6 +30,10 @@ abstract class LazyLoadedObject {
 	protected abstract JSONObject load() throws TautException;
 	protected abstract void populate(JSONObject json);
 
+	protected void unload() {
+		this.isLoaded = false;
+	}
+
 	@Override public boolean equals(Object o) {
 		if(!this.getClass().equals(o.getClass())) {
 			return false;

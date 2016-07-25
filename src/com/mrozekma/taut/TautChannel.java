@@ -176,6 +176,11 @@ public class TautChannel extends LazyLoadedObject {
 		return message;
 	}
 
+	public TautFile uploadFile(TautFileUpload file) throws TautException {
+		file.setChannels(this);
+		return this.conn.uploadFile(file);
+	}
+
 	public FileIterable iterFiles() throws TautException {
 		return this.conn.iterFiles(this);
 	}

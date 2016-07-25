@@ -2,10 +2,8 @@ package com.mrozekma.taut;
 
 import org.json.JSONException;
 
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 // https://api.slack.com/types/file
 public class TautFile extends LazyLoadedObject {
@@ -203,6 +201,36 @@ public class TautFile extends LazyLoadedObject {
 		channel.ifPresent(c -> req.put("channel", c.getId()));
 		final JSONObject res = this.post("files.comments.add", req);
 		return new TautFileComment(this, res.getJSONObject("comment"));
+	}
+
+	public void delete() throws TautException {
+		this.post("files.delete");
+		this.unload();
+	}
+
+	public String share() throws TautException {
+		this.populate(this.post("files.sharedPublicURL").getJSONObject("file"));
+		return this.permalinkPublic.get();
+	}
+
+	public void revokeShare() throws TautException {
+		this.populate(this.post("files.revokePublicURL").getJSONObject("file"));
+	}
+
+	public static TautFile upload(TautConnection conn, TautFileUpload file) throws TautException {
+		final JSONObject req = new JSONObject();
+		req.put("file", file.getData());
+		req.put("filename", file.getFilename());
+		file.getFiletype().ifPresent(filetype -> req.put("filetype", filetype));
+		file.getTitle().ifPresent(title -> req.put("title", title));
+		file.getInitialComment().ifPresent(comment -> req.put("initial_comment", comment));
+		final TautChannel[] channels = file.getChannels();
+		if(channels.length > 0) {
+			req.put("channels", Arrays.stream(channels).map(TautChannel::getId).collect(Collectors.joining(",")));
+		}
+
+		final JSONObject res = conn.post("files.upload", req);
+		return new TautFile(conn, res.getJSONObject("file"));
 	}
 
 	public static abstract class Subtype {}

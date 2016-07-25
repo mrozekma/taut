@@ -6,6 +6,8 @@ import org.apache.http.NameValuePair;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
 
@@ -40,14 +42,35 @@ public class TautConnection {
 		final HttpClient client = HttpClients.createDefault();
 		final HttpPost post = new HttpPost(String.format(API_URL, route));
 
-		final List<NameValuePair> nvps = new LinkedList<>();
-		args.stream().forEach(k -> {
-			final String key = (String)k;
-			final Object val = args.get(key);
-			nvps.add(new BasicNameValuePair(key, val.toString()));
-		});
-		try {
-			final UrlEncodedFormEntity entity = new UrlEncodedFormEntity(nvps);
+		// Use a MultipartEntity iff there are byte[](s) in 'args'
+		// It's possible to use it in all cases, but the inefficiency bothers me
+		{
+			final HttpEntity entity;
+			if(args.stream().map(args::get).anyMatch(e -> e instanceof byte[])) {
+				MultipartEntityBuilder builder = MultipartEntityBuilder.create();
+				args.stream().forEach(key -> {
+					final Object val = args.get(key);
+					if(val instanceof byte[]) {
+						builder.addBinaryBody(key, (byte[])val, ContentType.APPLICATION_OCTET_STREAM, "file");
+					} else {
+						builder.addTextBody(key, val.toString());
+					}
+				});
+				entity = builder.build();
+			} else {
+				final List<NameValuePair> nvps = new LinkedList<>();
+				args.stream().forEach(key -> {
+					final Object val = args.get(key);
+					nvps.add(new BasicNameValuePair(key, val.toString()));
+				});
+
+				try {
+					entity = new UrlEncodedFormEntity(nvps);
+				} catch(UnsupportedEncodingException e) {
+					throw new TautException(e);
+				}
+			}
+
 			System.out.format("[Tx] %s ", route); //TODO Remove
 			try {
 				entity.writeTo(System.out);
@@ -56,8 +79,6 @@ public class TautConnection {
 				System.out.println("(error)");
 			}
 			post.setEntity(entity);
-		} catch(UnsupportedEncodingException e) {
-			throw new RuntimeException(e);
 		}
 
 		final JSONObject rtn;
@@ -100,6 +121,10 @@ public class TautConnection {
 
 	public TautChannel createChannel(String name) throws TautException {
 		return TautChannel.create(this, name);
+	}
+
+	public TautFile uploadFile(TautFileUpload file) throws TautException {
+		return TautFile.upload(this, file);
 	}
 
 	public TautUser getSelf() {

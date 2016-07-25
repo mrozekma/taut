@@ -53,11 +53,12 @@ public class TautFileComment extends LazyLoadedObject {
 	}
 
 	public TautFileComment edit(String comment) throws TautException {
-		final JSONObject res = this.post("files.comments.edit", new JSONObject().put("comment", comment));
-		return new TautFileComment(this.file, res.getJSONObject("comment"));
+		this.populate(this.post("files.comments.edit", new JSONObject().put("comment", comment)));
+		return this;
 	}
 
 	public void delete() throws TautException {
 		this.post("files.comments.delete");
+		this.unload();
 	}
 }
