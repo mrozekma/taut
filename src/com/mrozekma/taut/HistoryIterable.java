@@ -5,14 +5,14 @@ import java.util.stream.Collectors;
 
 public class HistoryIterable implements Iterable<TautReceivedMessage> {
 	private final TautConnection conn;
-	private final TautChannel channel;
+	private final TautAbstractChannel channel;
 	private final Optional<Date> latest;
 	private final Optional<Date> oldest;
 	private final boolean inclusive;
 	private final int count;
 	private final boolean unreads;
 
-	HistoryIterable(TautChannel channel, Optional<Date> latest, Optional<Date> oldest, boolean inclusive, int count, boolean unreads) throws TautException {
+	HistoryIterable(TautAbstractChannel channel, Optional<Date> latest, Optional<Date> oldest, boolean inclusive, int count, boolean unreads) throws TautException {
 		this.conn = channel.conn;
 		this.channel = channel;
 		this.latest = latest;
@@ -35,7 +35,7 @@ public class HistoryIterable implements Iterable<TautReceivedMessage> {
 			private void doRequest() throws RuntimeException {
 				final JSONObject res;
 				try {
-					res = channel.post("channels.history", request);
+					res = channel.post(channel.getRoutePrefix() + ".history", request);
 				} catch(TautException e) {
 					// Can't throw TautException because we need to conform to the Iterable interface
 					throw new RuntimeException(e);

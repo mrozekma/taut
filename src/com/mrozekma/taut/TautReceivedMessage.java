@@ -23,7 +23,7 @@ public class TautReceivedMessage {
 	}
 
 	private final TautConnection conn;
-	private final TautChannel channel;
+	private final TautAbstractChannel channel;
 	private final String text;
 	private final WhoWhen current;
 	private final Optional<WhoWhen> edited;
@@ -33,7 +33,7 @@ public class TautReceivedMessage {
 	private final TautChannel[] pins;
 	private final TautReaction[] reactions;
 
-	public TautReceivedMessage(TautChannel channel, String text, WhoWhen current, Optional<WhoWhen> edited, TautAttachment[] attachments, boolean starred, TautChannel[] pins, TautReaction[] reactions) {
+	public TautReceivedMessage(TautAbstractChannel channel, String text, WhoWhen current, Optional<WhoWhen> edited, TautAttachment[] attachments, boolean starred, TautChannel[] pins, TautReaction[] reactions) {
 		this.conn = channel.conn;
 		this.channel = channel;
 		this.text = text;
@@ -46,7 +46,7 @@ public class TautReceivedMessage {
 		this.reactions = reactions;
 	}
 
-	public TautReceivedMessage(TautChannel channel, JSONObject json) {
+	public TautReceivedMessage(TautAbstractChannel channel, JSONObject json) {
 		this.conn = channel.conn;
 		this.channel = channel;
 		this.text = json.getString("text");
@@ -64,7 +64,7 @@ public class TautReceivedMessage {
 		this.reactions = json.has("reactions") ? json.getJSONArray("reactions").<JSONObject>stream().map(js -> new TautReaction(this.conn, js)).toArray(TautReaction[]::new) : new TautReaction[0];
 	}
 
-	public TautChannel getChannel() { return this.channel; }
+	public TautAbstractChannel getChannel() { return this.channel; }
 	public String getText() { return this.text; }
 	public WhoWhen getCurrent() { return this.current; }
 	public Optional<WhoWhen> getEdited() { return this.edited; }

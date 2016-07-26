@@ -14,7 +14,7 @@ public class TautMessage {
 	private Optional<String> iconEmoji;
 
 	private Optional<String> sentTs = Optional.empty();
-	private Optional<TautChannel> sentChannel = Optional.empty();
+	private Optional<TautAbstractChannel> sentChannel = Optional.empty();
 
 	private static Optional<String> defaultUsername = Optional.empty();
 	private static Optional<String> defaultIconUrl = Optional.empty();
@@ -101,9 +101,9 @@ public class TautMessage {
 		return this;
 	}
 
-	Optional<TautChannel> getSentChannel() { return this.sentChannel; }
+	Optional<TautAbstractChannel> getSentChannel() { return this.sentChannel; }
 
-	TautMessage setSentChannel(TautChannel sentChannel) {
+	TautMessage setSentChannel(TautAbstractChannel sentChannel) {
 		this.sentChannel = Optional.of(sentChannel);
 		return this;
 	}

@@ -110,13 +110,8 @@ public class TautFile extends LazyLoadedObject {
 		return this.comments.get();
 	}
 
-	JSONObject post(String route) throws TautException {
-		return this.post(route, new JSONObject());
-	}
-
-	JSONObject post(String route, JSONObject args) throws TautException {
+	@Override protected void prepJSONObjectForPost(JSONObject args) {
 		args.put("file", this.getId());
-		return this.conn.post(route, args);
 	}
 
 	@Override protected JSONObject load() throws TautException {
@@ -224,9 +219,9 @@ public class TautFile extends LazyLoadedObject {
 		file.getFiletype().ifPresent(filetype -> req.put("filetype", filetype));
 		file.getTitle().ifPresent(title -> req.put("title", title));
 		file.getInitialComment().ifPresent(comment -> req.put("initial_comment", comment));
-		final TautChannel[] channels = file.getChannels();
+		final TautAbstractChannel[] channels = file.getChannels();
 		if(channels.length > 0) {
-			req.put("channels", Arrays.stream(channels).map(TautChannel::getId).collect(Collectors.joining(",")));
+			req.put("channels", Arrays.stream(channels).map(TautAbstractChannel::getId).collect(Collectors.joining(",")));
 		}
 
 		final JSONObject res = conn.post("files.upload", req);

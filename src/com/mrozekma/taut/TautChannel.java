@@ -6,7 +6,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 // https://api.slack.com/types/channel
-public class TautChannel extends LazyLoadedObject {
+public class TautChannel extends TautAbstractChannel {
 	private String name;
 	private long created;
 	private TautUser creator;
@@ -69,45 +69,30 @@ public class TautChannel extends LazyLoadedObject {
 		}
 	}
 
-	JSONObject post(String route) throws TautException {
-		return this.post(route, new JSONObject());
+	@Override protected JSONObject post(String route, JSONObject args) throws TautException {
+		if(route.startsWith(".")) {
+			route = this.getRoutePrefix() + route;
+		}
+		return super.post(route, args);
 	}
 
-	JSONObject post(String route, JSONObject args) throws TautException {
-		if(route.startsWith(".")) {
-			switch(this.getId().charAt(0)) {
-			case 'C':
-				route = "channels" + route;
-				break;
-			case 'G':
-				route = "groups" + route;
-				break;
-			default:
-				throw new IllegalStateException("Invalid channel ID: " + this.getId());
-			}
-		}
+	@Override protected void prepJSONObjectForPost(JSONObject args) {
 		args.put("channel", this.getId());
-		return this.conn.post(route, args);
+	}
+
+	@Override protected String getRoutePrefix() {
+		switch(this.getId().charAt(0)) {
+		case 'C':
+			return "channels";
+		case 'G':
+			return "groups";
+		default:
+			throw new IllegalStateException("Invalid channel ID: " + this.getId());
+		}
 	}
 
 	public void archive() throws TautException {
 		this.post(".archive");
-	}
-
-	public Iterable<TautReceivedMessage> history() throws TautException {
-		return this.history(100);
-	}
-
-	public Iterable<TautReceivedMessage> history(int count) throws TautException {
-		return this.history(Optional.empty(), Optional.empty(), true, count, true);
-	}
-
-	public Iterable<TautReceivedMessage> history(int count, Date latest, Date oldest, boolean inclusive) throws TautException {
-		return this.history(Optional.of(latest), Optional.of(oldest), inclusive, count, true);
-	}
-
-	private Iterable<TautReceivedMessage> history(Optional<Date> latest, Optional<Date> oldest, boolean inclusive, int count, boolean unreads) throws TautException {
-		return new HistoryIterable(this, latest, oldest, inclusive, count, unreads);
 	}
 
 	public void invite(TautUser user) throws TautException {
@@ -145,40 +130,6 @@ public class TautChannel extends LazyLoadedObject {
 
 	public void unarchive() throws TautException {
 		this.post(".unarchive");
-	}
-
-	public TautMessage sendMessage(TautMessage message) throws TautException {
-		final JSONObject args = new JSONObject()
-				.put("text", message.getText())
-				.put("parse", message.getParse() ? "full" : "none")
-				.put("link_names", message.getLinkNames() ? 1 : 0)
-				.put("unfurl_links", message.getUnfurlLinks())
-				.put("unfurl_media", message.getUnfurlMedia())
-				.putOpt("username", message.getUsername())
-				.put("as_user", message.getAsUser())
-				.putOpt("icon_url", message.getIconUrl())
-				.putOpt("icon_emoji", message.getIconEmoji());
-		final JSONObject res = this.post("chat.postMessage", args);
-		message.setSentTs(res.getString("ts"));
-		message.setSentChannel(this);
-		return message;
-	}
-
-	public TautMessage sendMessage(String text) throws TautException {
-		return this.sendMessage(new TautMessage(text));
-	}
-
-	public TautMessage sendMeMessage(String text) throws TautException {
-		final JSONObject res = this.post("chat.meMessage", new JSONObject().put("text", text));
-		final TautMessage message = new TautMessage(text);
-		message.setSentTs(res.getString("ts"));
-		message.setSentChannel(this);
-		return message;
-	}
-
-	public TautFile uploadFile(TautFileUpload file) throws TautException {
-		file.setChannels(this);
-		return this.conn.uploadFile(file);
 	}
 
 	public FileIterable iterFiles() throws TautException {

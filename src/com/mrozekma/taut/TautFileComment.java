@@ -33,13 +33,8 @@ public class TautFileComment extends LazyLoadedObject {
 		return TautConnection.tsApiToHost(this.getCreated());
 	}
 
-	JSONObject post(String route) throws TautException {
-		return this.post(route, new JSONObject());
-	}
-
-	JSONObject post(String route, JSONObject args) throws TautException {
+	@Override protected void prepJSONObjectForPost(JSONObject args) {
 		args.put("id", this.getId());
-		return this.file.post(route, args);
 	}
 
 	@Override protected JSONObject load() throws TautException {

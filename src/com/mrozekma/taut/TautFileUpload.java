@@ -1,8 +1,6 @@
 package com.mrozekma.taut;
 
 import org.apache.tika.Tika;
-import org.apache.tika.detect.DefaultDetector;
-import org.apache.tika.detect.Detector;
 
 import java.io.File;
 import java.io.IOException;
@@ -93,7 +91,7 @@ public class TautFileUpload {
 	private String filename;
 	private Optional<String> title = Optional.empty();
 	private Optional<String> initialComment = Optional.empty();
-	private TautChannel[] channels = new TautChannel[0];
+	private TautAbstractChannel[] channels = new TautAbstractChannel[0];
 
 	// This is a string because the docs say the filetypes
 	// "include, but are not limited to" the values listed in the enum
@@ -113,7 +111,7 @@ public class TautFileUpload {
 	public String getFilename() { return this.filename; }
 	public Optional<String> getTitle() { return this.title; }
 	public Optional<String> getInitialComment() { return this.initialComment; }
-	public TautChannel[] getChannels() { return this.channels; }
+	public TautAbstractChannel[] getChannels() { return this.channels; }
 
 	public TautFileUpload setData(byte[] data) {
 		this.data = data;
@@ -149,7 +147,7 @@ public class TautFileUpload {
 		return this;
 	}
 
-	public TautFileUpload setChannels(TautChannel... channels) {
+	public TautFileUpload setChannels(TautAbstractChannel... channels) {
 		this.channels = channels;
 		return this;
 	}

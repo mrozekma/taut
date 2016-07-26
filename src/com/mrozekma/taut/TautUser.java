@@ -48,13 +48,9 @@ public class TautUser extends LazyLoadedObject {
 	public Optional<String> getTwoFactorType() throws TautException { this.checkLoad(); return this.twoFactorType; }
 //	public boolean hasFiles() throws TautException { this.checkLoad(); return this.hasFiles; }
 
-	private JSONObject post(String route) throws TautException {
-		return this.post(route, new JSONObject());
-	}
 
-	private JSONObject post(String route, JSONObject args) throws TautException {
+	@Override public void prepJSONObjectForPost(JSONObject args) {
 		args.put("user", this.getId());
-		return this.conn.post(route, args);
 	}
 
 	@Override protected JSONObject load() throws TautException {
@@ -111,6 +107,10 @@ public class TautUser extends LazyLoadedObject {
 
 	public FileIterable iterFiles() throws TautException {
 		return this.conn.iterFiles(this);
+	}
+
+	public TautDirectChannel getDirectChannel() throws TautException {
+		return new TautDirectChannel(this);
 	}
 
 	public static TautUser getById(TautConnection conn, String id) {

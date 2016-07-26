@@ -34,13 +34,16 @@ abstract class LazyLoadedObject {
 		this.isLoaded = false;
 	}
 
-	@Override public boolean equals(Object o) {
-		if(!this.getClass().equals(o.getClass())) {
-			return false;
-		}
-		final LazyLoadedObject other = (LazyLoadedObject)o;
-		return this.id.equals(other.id);
+	protected JSONObject post(String route) throws TautException {
+		return this.post(route, new JSONObject());
 	}
+
+	protected JSONObject post(String route, JSONObject args) throws TautException {
+		this.prepJSONObjectForPost(args);
+		return this.conn.post(route, args);
+	}
+
+	protected abstract void prepJSONObjectForPost(JSONObject args);
 
 	@Override public String toString() {
 		// Slack has a unique ID character prefix for each type, so this should be unique even between different concrete classes
