@@ -22,7 +22,7 @@ public class TautReceivedMessage {
 		}
 	}
 
-	private final TautConnection conn;
+	final TautConnection conn;
 	private final TautAbstractChannel channel;
 	private final String text;
 	private final WhoWhen current;
@@ -31,9 +31,9 @@ public class TautReceivedMessage {
 
 	private final boolean starred;
 	private final TautChannel[] pins;
-	private final TautReaction[] reactions;
+	private final TautReactionList reactions;
 
-	public TautReceivedMessage(TautAbstractChannel channel, String text, WhoWhen current, Optional<WhoWhen> edited, TautAttachment[] attachments, boolean starred, TautChannel[] pins, TautReaction[] reactions) {
+	public TautReceivedMessage(TautAbstractChannel channel, String text, WhoWhen current, Optional<WhoWhen> edited, TautAttachment[] attachments, boolean starred, TautChannel[] pins) {
 		this.conn = channel.conn;
 		this.channel = channel;
 		this.text = text;
@@ -43,7 +43,8 @@ public class TautReceivedMessage {
 
 		this.starred = starred;
 		this.pins = pins;
-		this.reactions = reactions;
+
+		this.reactions = new TautMessageReactionList(this);
 	}
 
 	public TautReceivedMessage(TautAbstractChannel channel, JSONObject json) {
@@ -61,7 +62,8 @@ public class TautReceivedMessage {
 
 		this.starred = json.optBoolean("is_starred", false);
 		this.pins = json.has("pinned_to") ? json.getJSONArray("pinned_to").<String>stream().map(id -> new TautChannel(this.conn, id)).toArray(TautChannel[]::new) : new TautChannel[0];
-		this.reactions = json.has("reactions") ? json.getJSONArray("reactions").<JSONObject>stream().map(js -> new TautReaction(this.conn, js)).toArray(TautReaction[]::new) : new TautReaction[0];
+
+		this.reactions = new TautMessageReactionList(this);
 	}
 
 	public TautAbstractChannel getChannel() { return this.channel; }
@@ -71,5 +73,13 @@ public class TautReceivedMessage {
 	public TautAttachment[] getAttachments() { return this.attachments; }
 	public boolean getStarred() { return this.starred; }
 	public TautChannel[] getPins() { return this.pins; }
-	public TautReaction[] getReactions() { return this.reactions; }
+	public TautReactionList getReactions() { return this.reactions; }
+
+	public void addReaction(String name) throws TautException {
+		this.getReactions().add(name);
+	}
+
+	public void removeReaction(String name) throws TautException {
+		this.getReactions().remove(name);
+	}
 }

@@ -7,6 +7,7 @@ public class TautFileComment extends LazyLoadedObject {
 	private long created;
 	private TautUser user;
 	private String comment;
+	private TautReactionList reactions;
 
 	// I made this a LazyLoadedObject, but I don't actually think it's possible to lookup comments by ID
 	/*
@@ -22,12 +23,14 @@ public class TautFileComment extends LazyLoadedObject {
 	TautFileComment(TautFile file, JSONObject json) {
 		super(file.conn, json);
 		this.file = file;
+		this.reactions = new TautFileCommentReactionList(this);
 	}
 
 	public TautFile getFile() throws TautException { return this.file; }
 	public long getCreated() throws TautException { this.checkLoad(); return this.created; }
 	public TautUser getUser() throws TautException { this.checkLoad(); return this.user; }
 	public String getComment() throws TautException { this.checkLoad(); return this.comment; }
+	public TautReactionList getReactions() throws TautException { this.checkLoad(); return this.reactions; }
 
 	public Date getCreatedDate() throws TautException {
 		return TautConnection.tsApiToHost(this.getCreated());

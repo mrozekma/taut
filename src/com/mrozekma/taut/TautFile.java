@@ -32,7 +32,6 @@ public class TautFile extends LazyLoadedObject {
 //	private TautDirectMessage[] ims;
 	private TautChannel[] pinnedTo;
 	private Optional<TautFileComment> initialComment;
-	private TautReaction[] reactions;
 
 	private Optional<TautFileComment[]> comments = Optional.empty();
 
@@ -45,16 +44,20 @@ public class TautFile extends LazyLoadedObject {
 
 	private Map<Integer, String> thumbs;
 
+	private TautReactionList reactions;
+
 	TautFile(TautConnection conn, String id) {
 		super(conn, id);
 		// Fc is a TautFileComment
 		if(!id.startsWith("F") || id.startsWith("Fc")) {
 			throw new IllegalArgumentException("Invalid file ID: " + id);
 		}
+		this.reactions = new TautFileReactionList(this);
 	}
 
 	TautFile(TautConnection conn, JSONObject json) {
 		super(conn, json);
+		this.reactions = new TautFileReactionList(this);
 	}
 
 	public Subtype getSubtype() throws TautException { this.checkLoad(); return this.subtype; }
@@ -91,6 +94,7 @@ public class TautFile extends LazyLoadedObject {
 	public boolean getIsStarred() throws TautException { this.checkLoad(); return this.isStarred; }
 
 	public Map<Integer, String> getThumbs() throws TautException { this.checkLoad(); return this.thumbs; }
+	public TautReactionList getReactions() throws TautException { this.checkLoad(); return this.reactions; }
 
 	public TautFileComment[] getComments() throws TautException {
 		this.checkLoad();
