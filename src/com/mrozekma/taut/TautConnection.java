@@ -71,7 +71,7 @@ public class TautConnection {
 				}
 			}
 
-			System.out.format("[Tx] %s ", route); //TODO Remove
+			System.out.format("[Tx API] %s ", route); //TODO Remove
 			try {
 				entity.writeTo(System.out);
 				System.out.println();
@@ -95,7 +95,7 @@ public class TautConnection {
 			throw new TautException(e);
 		}
 
-		System.out.printf("[Rx] %s\n", rtn); //TODO Remove
+		System.out.printf("[Rx API] %s\n", rtn); //TODO Remove
 		if(!rtn.getBoolean("ok")) {
 			throw new APIError(route, args, rtn);
 		}
@@ -164,6 +164,10 @@ public class TautConnection {
 		return new Map<String, String>() {{
 			res.getJSONObject("emoji").forEach((String k, String v) -> this.put(k, v));
 		}};
+	}
+
+	public TautRTMConnection rtmStart() throws TautException {
+		return new TautRTMConnection(this);
 	}
 
 	// ts is frequently used as an ID, so in those cases we keep them as strings to avoid precision problems when converting back.
