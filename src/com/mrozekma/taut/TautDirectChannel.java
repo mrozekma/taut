@@ -4,7 +4,6 @@ import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 public class TautDirectChannel extends TautAbstractChannel {
 	// This interface is a bit odd.
@@ -14,7 +13,7 @@ public class TautDirectChannel extends TautAbstractChannel {
 
 	private long created;
 	private String lastRead;
-	private Optional<TautReceivedMessage> latest;
+	private Optional<TautMessage> latest;
 	private int unreadCount, unreadCountDisplay;
 //	private boolean isIm, isOpen; // Don't see the purpose of these
 
@@ -29,12 +28,16 @@ public class TautDirectChannel extends TautAbstractChannel {
 	public TautUser getUser() throws TautException { this.checkLoad(); return this.user; }
 	public long getCreated() throws TautException { this.checkLoad(); return this.created; }
 	public String getLastRead() throws TautException { this.checkLoad(); return this.lastRead; }
-	public Optional<TautReceivedMessage> getLatest() throws TautException { this.checkLoad(); return this.latest; }
+	public Optional<TautMessage> getLatest() throws TautException { this.checkLoad(); return this.latest; }
 	public int getUnreadCount() throws TautException { this.checkLoad(); return this.unreadCount; }
 	public int getUnreadCountDisplay() throws TautException { this.checkLoad(); return this.unreadCountDisplay; }
 
 	public Date getCreatedDate() throws TautException {
 		return TautConnection.tsApiToHost(this.getCreated());
+	}
+
+	@Override public boolean isDirect() {
+		return true;
 	}
 
 	@Override protected JSONObject load() throws TautException {
@@ -45,7 +48,7 @@ public class TautDirectChannel extends TautAbstractChannel {
 		this.user = this.conn.getUserById(json.getString("user"));
 		this.created = json.getLong("created");
 		this.lastRead = json.getString("last_read");
-		this.latest = json.isNull("latest") ? Optional.empty() : Optional.of(new TautReceivedMessage(this, json.getJSONObject("latest")));
+		this.latest = json.isNull("latest") ? Optional.empty() : Optional.of(new TautMessage(this, json.getJSONObject("latest")));
 		this.unreadCount = json.getInt("unread_count");
 		this.unreadCountDisplay = json.getInt("unread_count_display");
 	}

@@ -65,7 +65,7 @@ public class TautConnection {
 				});
 
 				try {
-					entity = new UrlEncodedFormEntity(nvps);
+					entity = new UrlEncodedFormEntity(nvps, "UTF-8");
 				} catch(UnsupportedEncodingException e) {
 					throw new TautException(e);
 				}

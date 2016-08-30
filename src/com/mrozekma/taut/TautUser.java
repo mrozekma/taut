@@ -20,13 +20,17 @@ public class TautUser extends LazyLoadedObject {
 
 	TautUser(TautConnection conn, String id) {
 		super(conn, id);
-		if(!id.startsWith("U")) {
+		if(!(id.startsWith("U") || id.startsWith("B"))) {
 			throw new IllegalArgumentException("Invalid user ID: " + id);
 		}
 	}
 
 	TautUser(TautConnection conn, JSONObject json) {
 		super(conn, json);
+	}
+
+	public boolean isBot() {
+		return this.getId().startsWith("B");
 	}
 
 	public String getName() throws TautException { this.checkLoad(); return this.name; }
@@ -50,11 +54,11 @@ public class TautUser extends LazyLoadedObject {
 
 
 	@Override public void prepJSONObjectForPost(JSONObject args) {
-		args.put("user", this.getId());
+		args.put(this.isBot() ? "bot" : "user", this.getId());
 	}
 
 	@Override protected JSONObject load() throws TautException {
-		return this.post("users.info").getJSONObject("user");
+		return this.post(String.format("%s.info", this.isBot() ? "bots" : "users")).getJSONObject(this.isBot() ? "bot" : "user");
 	}
 
 	@Override protected void populate(JSONObject json) {
@@ -70,13 +74,18 @@ public class TautUser extends LazyLoadedObject {
 			this.color = Optional.empty();
 		}
 		{
-			final JSONObject profile = json.getJSONObject("profile");
+			final Optional<JSONObject> profile = json.<JSONObject>getOpt("profile");
 			final Function<String, Optional<String>> getOpt = key -> {
-				if(!profile.has(key) || profile.isNull(key)) {
-					return Optional.empty();
+				if(profile.isPresent()) {
+					final JSONObject p = profile.get();
+					if(p.has(key) && !p.isNull(key)) {
+						final String val = p.getString(key);
+						if(!val.isEmpty()) {
+							return Optional.of(val);
+						}
+					}
 				}
-				final String val = profile.getString(key);
-				return val.isEmpty() ? Optional.empty() : Optional.of(val);
+				return Optional.empty();
 			};
 
 			this.firstName = getOpt.apply("first_name");
@@ -86,9 +95,11 @@ public class TautUser extends LazyLoadedObject {
 			this.skype = getOpt.apply("skype");
 			this.phone = getOpt.apply("phone");
 			this.image = new Map<>();
-			((Set<String>)profile.keySet()).stream().filter(key -> key.startsWith("image_")).forEach(key -> {
-				final int imageSize = key.equals("image_original") ? 0 : Integer.parseInt(key.substring(6));
-				this.image.put(imageSize, profile.getString(key));
+			profile.ifPresent(p -> {
+				((Set<String>)p.keySet()).stream().filter(key -> key.startsWith("image_")).forEach(key -> {
+					final int imageSize = key.equals("image_original") ? 0 : Integer.parseInt(key.substring(6));
+					this.image.put(imageSize, p.getString(key));
+				});
 			});
 		}
 		this.isAdmin = json.optBoolean("is_admin", false);

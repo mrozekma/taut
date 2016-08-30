@@ -45,7 +45,7 @@ public abstract class TautReactionList extends AbstractSequentialList<TautReacti
 		final JSONObject req = this.buildRequest();
 		req.put("full", true);
 		final JSONObject res = this.extractResponse(this.conn.post("reactions.get", req));
-		return res.<JSONObject>streamArray("reactions").map(e -> new TautReaction(this, e)).collect(Collectors.toList());
+		return res.<JSONObject>streamArray("reactions").map(e -> new TautReaction(this.conn, e)).collect(Collectors.toList());
 	}
 
 	@Override public ListIterator<TautReaction> listIterator(int i) {
@@ -94,9 +94,9 @@ class TautFileCommentReactionList extends TautReactionList {
 }
 
 class TautMessageReactionList extends TautReactionList {
-	private final TautReceivedMessage message;
+	private final TautMessage message;
 
-	protected TautMessageReactionList(TautReceivedMessage message) {
+	protected TautMessageReactionList(TautMessage message) {
 		super(message.conn);
 		this.message = message;
 	}

@@ -80,16 +80,16 @@ public class TautRTMConnection implements MessageHandler.Whole<String> {
 		this.listeners.remove(listener);
 	}
 
-	private boolean isConnected() {
-		return this.session != null && this.session.isOpen();
-	}
-
 	private String getUrl() throws TautException {
 		final JSONObject res = this.conn.post("rtm.start", new JSONObject().put("simple_latest", true).put("no_unreads", true));
 		return res.getString("url");
 	}
 
-	private void connect() throws TautException {
+	public boolean isConnected() {
+		return this.session != null && this.session.isOpen();
+	}
+
+	public void connect() throws TautException {
 		System.out.println("[RTM] Connect"); //TODO Remove
 		try {
 			this.session = this.cm.connectToServer(new Endpoint() {
@@ -116,7 +116,9 @@ public class TautRTMConnection implements MessageHandler.Whole<String> {
 		if(json.optString("type", "").equals("pong")) {
 			this.watchdog.receivePong(json);
 		} else {
-			this.listeners.forEach(listener -> listener.fire(this.conn, json));
+			for(TautEventListener listener : this.listeners) {
+				listener.fire(this.conn, json);
+			}
 		}
 	}
 

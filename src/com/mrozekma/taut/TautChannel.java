@@ -41,6 +41,10 @@ public class TautChannel extends TautAbstractChannel {
 		return TautConnection.tsApiToHost(this.getCreated());
 	}
 
+	@Override public boolean isDirect() {
+		return false;
+	}
+
 	@Override protected JSONObject load() throws TautException {
 		switch(this.getId().charAt(0)) {
 		case 'C':

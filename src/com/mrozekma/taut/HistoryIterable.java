@@ -3,7 +3,7 @@ package com.mrozekma.taut;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class HistoryIterable implements Iterable<TautReceivedMessage> {
+public class HistoryIterable implements Iterable<TautMessage> {
 	private final TautConnection conn;
 	private final TautAbstractChannel channel;
 	private final Optional<Date> latest;
@@ -22,11 +22,11 @@ public class HistoryIterable implements Iterable<TautReceivedMessage> {
 		this.unreads = unreads;
 	}
 
-	@Override public Iterator<TautReceivedMessage> iterator() {
-		return new Iterator<TautReceivedMessage>() {
+	@Override public Iterator<TautMessage> iterator() {
+		return new Iterator<TautMessage>() {
 			private final JSONObject request = new JSONObject().putOpt("latest", latest).putOpt("oldest", oldest).put("inclusive", inclusive ? 1 : 0).put("count", count).put("unreads", unreads ? 1 : 0);
 			private Optional<String> nextRequestLatest;
-			private LinkedList<TautReceivedMessage> messages;
+			private LinkedList<TautMessage> messages;
 
 			{
 				this.doRequest();
@@ -40,7 +40,7 @@ public class HistoryIterable implements Iterable<TautReceivedMessage> {
 					// Can't throw TautException because we need to conform to the Iterable interface
 					throw new RuntimeException(e);
 				}
-				this.messages = new LinkedList<>(res.<JSONObject>streamArray("messages").map(message -> new TautReceivedMessage(channel, message)).collect(Collectors.toList()));
+				this.messages = new LinkedList<>(res.<JSONObject>streamArray("messages").map(message -> new TautMessage(channel, message)).collect(Collectors.toList()));
 				this.nextRequestLatest = res.optBoolean("has_more", false) ? Optional.of(this.messages.getLast().getCurrent().getTs()) : Optional.empty();
 			}
 
@@ -48,7 +48,7 @@ public class HistoryIterable implements Iterable<TautReceivedMessage> {
 				return !this.messages.isEmpty() || this.nextRequestLatest.isPresent();
 			}
 
-			@Override public TautReceivedMessage next() {
+			@Override public TautMessage next() {
 				if(this.messages.isEmpty()) {
 					if(this.nextRequestLatest.isPresent()) {
 						// Next request

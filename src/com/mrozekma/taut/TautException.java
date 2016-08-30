@@ -1,15 +1,15 @@
 package com.mrozekma.taut;
 
 public class TautException extends Exception {
-	TautException(String msg) {
+	public TautException(String msg) {
 		super(msg);
 	}
 
-	TautException(Throwable parent) {
+	public TautException(Throwable parent) {
 		super(parent);
 	}
 
-	TautException(String msg, Throwable parent) {
+	public TautException(String msg, Throwable parent) {
 		super(msg, parent);
 	}
 }

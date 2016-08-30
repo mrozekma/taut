@@ -1,7 +1,5 @@
 package com.mrozekma.taut;
 
-import org.json.JSONException;
-
 public interface TautEventListener {
 	enum EventType {
 		accounts_changed, bot_added, bot_changed, channel_archive, channel_created, channel_deleted,
@@ -17,7 +15,7 @@ public interface TautEventListener {
 		user_change, user_typing
 	}
 
-	default void fire(TautConnection conn, JSONObject json) throws JSONException {
+	default void fire(TautConnection conn, JSONObject json) throws TautException {
 		final EventType type;
 		try {
 			type = EventType.valueOf(json.getString("type"));
@@ -26,21 +24,43 @@ public interface TautEventListener {
 			return;
 		}
 
+		//TODO Most if not all of the rest of these
 		switch(type) {
-		case message:
+		case message: {
 			final TautChannel channel = new TautChannel(conn, json.getString("channel"));
-			final TautReceivedMessage message = new TautReceivedMessage(channel, json);
+			final TautMessage message = new TautMessage(channel, json);
 			this.onMessage(message);
-			break;
+			break; }
+		case reaction_added: {
+			final TautReaction reaction = new TautReaction(conn, json.getString("reaction"), 1, new TautUser(conn, json.getString("user")));
+
+			final JSONObject item = json.getJSONObject("item");
+			final String itemType = item.getString("type");
+			if(itemType.equals("message")) {
+				final TautChannel channel = new TautChannel(conn, item.getString("channel"));
+				this.onMessageReactionAdded(channel.messageByTs(item.getString("ts")), reaction);
+			} else if(itemType.equals("file")) {
+				this.onFileReactionAdded(new TautFile(conn, item.getString("file")), reaction);
+			} else if(itemType.equals("file_comment")) {
+				//TODO Not sure how to do this
+//				this.onFileCommentReactionAdded(new TautFileComment(new TautFile(conn, item.getString("file")), item.getString("file_comment")), reaction);
+				throw new TautException("Unimplemented");
+			} else {
+				throw new TautException("Unexpected reaction item type: " + itemType);
+			}
+			break; }
+		default:
+			this.onUnknownEvent(json);
 		}
 	}
 
-	void onUnknownEvent(JSONObject json);
+	default void onUnknownEvent(JSONObject json) {}
 
-	void onMessage(TautReceivedMessage message);
+	default void onMessage(TautMessage message) {}
 
-	abstract class TautEventAdapter implements TautEventListener {
-		@Override public void onUnknownEvent(JSONObject json) {}
-		@Override public void onMessage(TautReceivedMessage message) {}
-	}
+	default void onMessageReactionAdded(TautMessage message, TautReaction reaction) {}
+
+	default void onFileReactionAdded(TautFile file, TautReaction reaction) {}
+
+	default void onFileCommentReactionAdded(TautFileComment comment, TautReaction reaction) {}
 }

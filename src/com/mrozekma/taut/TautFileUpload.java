@@ -88,7 +88,7 @@ public class TautFileUpload {
 	}
 
 	private byte[] data;
-	private String filename;
+	private Optional<String> filename = Optional.empty();
 	private Optional<String> title = Optional.empty();
 	private Optional<String> initialComment = Optional.empty();
 	private TautAbstractChannel[] channels = new TautAbstractChannel[0];
@@ -101,14 +101,18 @@ public class TautFileUpload {
 		this(Files.readAllBytes(Paths.get(file.toURI())), file.getName());
 	}
 
-	public TautFileUpload(byte[] data, String filename) {
+	public TautFileUpload(byte[] data) {
 		this.data = data;
-		this.filename = filename;
+	}
+
+	public TautFileUpload(byte[] data, String filename) {
+		this(data);
+		this.filename = Optional.of(filename);
 	}
 
 	public byte[] getData() { return this.data; }
 	public Optional<String> getFiletype() { return this.filetype; }
-	public String getFilename() { return this.filename; }
+	public Optional<String> getFilename() { return this.filename; }
 	public Optional<String> getTitle() { return this.title; }
 	public Optional<String> getInitialComment() { return this.initialComment; }
 	public TautAbstractChannel[] getChannels() { return this.channels; }
@@ -133,7 +137,7 @@ public class TautFileUpload {
 	}
 
 	public TautFileUpload setFilename(String filename) {
-		this.filename = filename;
+		this.filename = Optional.of(filename);
 		return this;
 	}
 
