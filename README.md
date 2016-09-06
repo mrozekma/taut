@@ -1,0 +1,1 @@
+This is the Slack library used by [NoiseBot](https://github.com/mrozekma/NoiseBot/). I plan to document it more in the future and make the interface a bit easier to use (it essentially mirrors the Slack API at the moment). For now, you should probably not use this, as it's not particularly well tested and might change at any moment.
