@@ -7,15 +7,15 @@ import java.util.Optional;
 import java.util.Set;
 
 public class TautAttachment {
-	static class Field {
+	public static class Field {
 		private final String title, value;
 		private final boolean isShort;
 
-		private Field(JSONObject json) {
+		public Field(JSONObject json) {
 			this(json.getString("title"), json.getString("value"), json.getBoolean("short"));
 		}
 
-		private Field(String title, String value, boolean isShort) {
+		public Field(String title, String value, boolean isShort) {
 			this.title = title;
 			this.value = value;
 			this.isShort = isShort;
@@ -29,15 +29,99 @@ public class TautAttachment {
 		}
 	}
 
+	public static class Action {
+		public static class Confirmation {
+			private final Optional<String> title, okText, dismissText;
+			private final String text;
+
+			public Confirmation(String text) {
+				this(Optional.empty(), text, Optional.empty(), Optional.empty());
+			}
+
+			public Confirmation(String title, String text) {
+				this(Optional.of(title), text, Optional.empty(), Optional.empty());
+			}
+
+			public Confirmation(String title, String text, String okText, String dismissText) {
+				this(Optional.of(title), text, Optional.of(okText), Optional.of(dismissText));
+			}
+
+			private Confirmation(Optional<String> title, String text, Optional<String> okText, Optional<String> dismissText) {
+				this.title = title;
+				this.text = text;
+				this.okText = okText;
+				this.dismissText = dismissText;
+			}
+
+			JSONObject toJSON() {
+				return new JSONObject()
+						.putOpt("title", this.title)
+						.put("text", this.text)
+						.putOpt("ok_text", this.okText)
+						.putOpt("dismiss_text", this.dismissText);
+			}
+		}
+
+		public enum Style {primary, danger}
+
+		public enum Type {button}
+
+		private final String name, text;
+		private final Optional<Style> style;
+		private final Type type;
+		private final Optional<String> value;
+		private final Optional<Confirmation> confirm;
+
+		public Action(String name, String text) {
+			this(name, text, Optional.empty(), Type.button, Optional.empty(), Optional.empty());
+		}
+
+		public Action(String name, String text, String value) {
+			this(name, text, Optional.empty(), Type.button, Optional.of(value), Optional.empty());
+		}
+
+		public Action(String name, String text, Style style) {
+			this(name, text, Optional.of(style), Type.button, Optional.empty(), Optional.empty());
+		}
+
+		public Action(String name, String text, Style style, String value) {
+			this(name, text, Optional.of(style), Type.button, Optional.of(value), Optional.empty());
+		}
+
+		public Action(String name, String text, Style style, String value, Confirmation confirm) {
+			this(name, text, Optional.of(style), Type.button, Optional.of(value), Optional.of(confirm));
+		}
+
+		private Action(String name, String text, Optional<Style> style, Type type, Optional<String> value, Optional<Confirmation> confirm) {
+			this.name = name;
+			this.text = text;
+			this.style = style;
+			this.type = type;
+			this.value = value;
+			this.confirm = confirm;
+		}
+
+		JSONObject toJSON() {
+			return new JSONObject()
+					.put("name", this.name)
+					.put("text", this.text)
+					.putOpt("style", this.style.map(Style::toString))
+					.put("type", this.type.toString())
+					.putOpt("value", this.value)
+					.putOpt("confirm", this.confirm.map(Confirmation::toString));
+		}
+	}
+
 	enum MarkdownIn {
 		pretext, text, fields
 	}
 
 	private final TautConnection conn;
-	private Optional<String> fallback, pretext, authorName, authorLink, authorIcon, title, titleLink, text, imageUrl, thumbUrl, footer, footerIcon;
+	private Optional<String> fallback, pretext, authorName, authorLink, authorIcon, title, titleLink, text, imageUrl, thumbUrl, footer, footerIcon, callbackId;
 	private Optional<Color> color;
 	private Field[] fields;
 	private Optional<Long> ts;
+	private Action[] actions;
 	private final Set<MarkdownIn> markdownIn = new HashSet<>();
 
 	public TautAttachment(TautConnection conn) {
@@ -57,9 +141,11 @@ public class TautAttachment {
 		this.footer = Optional.empty();
 		this.footerIcon = Optional.empty();
 		this.ts = Optional.empty();
+		this.callbackId = Optional.empty();
+		this.actions = new Action[0];
 	}
 
-	public TautAttachment(TautConnection conn, String fallback, Color color, String pretext, String authorName, String authorLink, String authorIcon, String title, String titleLink, String text, Field[] fields, String imageUrl, String thumbUrl, String footer, String footerIcon, long ts) {
+	public TautAttachment(TautConnection conn, String fallback, Color color, String pretext, String authorName, String authorLink, String authorIcon, String title, String titleLink, String text, Field[] fields, String imageUrl, String thumbUrl, String footer, String footerIcon, long ts, String callbackId, Action[] actions) {
 		this.conn = conn;
 		this.fallback = Optional.of(fallback);
 		this.color = Optional.of(color);
@@ -76,6 +162,8 @@ public class TautAttachment {
 		this.footer = Optional.of(footer);
 		this.footerIcon = Optional.of(footerIcon);
 		this.ts = Optional.of(ts);
+		this.callbackId = Optional.of(callbackId);
+		this.actions = actions;
 	}
 
 	public TautAttachment(TautConnection conn, JSONObject json) {
@@ -95,6 +183,9 @@ public class TautAttachment {
 		this.footer = json.getOpt("footer");
 		this.footerIcon = json.getOpt("footer_icon");
 		this.ts = json.has("ts") ? Optional.of(json.getLong("ts")) : Optional.empty();
+
+		this.callbackId = Optional.empty();
+		this.actions = new Action[0];
 	}
 
 	public Optional<String> getFallback() { return this.fallback; }
@@ -112,6 +203,8 @@ public class TautAttachment {
 	public Optional<Color> getColor() { return this.color; }
 	public Field[] getFields() { return this.fields; }
 	public Optional<Long> getTs() { return this.ts; }
+	public Optional<String> getCallbackId() { return this.callbackId; }
+	public Action[] getActions() { return this.actions; }
 
 	public TautAttachment setFallback(String fallback) {
 		this.fallback = Optional.of(fallback);
@@ -222,6 +315,12 @@ public class TautAttachment {
 		return this;
 	}
 
+	public TautAttachment setActions(String callbackId, Action... actions) {
+		this.callbackId = Optional.of(callbackId);
+		this.actions = actions;
+		return this;
+	}
+
 	JSONObject toJSON() {
 		return new JSONObject()
 				.putOpt("fallback", this.fallback)
@@ -240,6 +339,8 @@ public class TautAttachment {
 				.putOpt("footer_icon", this.footerIcon)
 				.putOpt("ts", this.ts)
 				.put("mrkdwn_in", this.markdownIn.stream().map(MarkdownIn::toString).toArray(String[]::new))
+				.putOpt("callback_id", this.callbackId)
+				.put("actions", Arrays.stream(this.actions).map(Action::toJSON).toArray(JSONObject[]::new))
 				;
 	}
 }
