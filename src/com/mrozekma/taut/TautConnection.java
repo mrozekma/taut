@@ -18,6 +18,7 @@ import java.util.*;
 import java.util.List;
 
 public class TautConnection {
+	static final boolean VERBOSE = System.getenv().containsKey("TAUT_VERBOSE");
 	private static final String API_URL = "https://slack.com/api/%s";
 
 	private final String token;
@@ -71,12 +72,14 @@ public class TautConnection {
 				}
 			}
 
-			System.out.format("[Tx API] %s ", route); //TODO Remove
-			try {
-				entity.writeTo(System.out);
-				System.out.println();
-			} catch(IOException e) {
-				System.out.println("(error)");
+			if(VERBOSE) {
+				System.out.printf("[Tx API] %s ", route);
+				try {
+					entity.writeTo(System.out);
+					System.out.println();
+				} catch(IOException e) {
+					System.out.println("(error)");
+				}
 			}
 			post.setEntity(entity);
 		}
@@ -95,7 +98,9 @@ public class TautConnection {
 			throw new TautException(e);
 		}
 
-		System.out.printf("[Rx API] %s\n", rtn); //TODO Remove
+		if(VERBOSE) {
+			System.out.printf("[Rx API] %s\n", rtn);
+		}
 		if(!rtn.getBoolean("ok")) {
 			throw new APIError(route, args, rtn);
 		}

@@ -90,7 +90,6 @@ public class TautRTMConnection implements MessageHandler.Whole<String> {
 	}
 
 	public void connect() throws TautException {
-		System.out.println("[RTM] Connect"); //TODO Remove
 		try {
 			this.session = this.cm.connectToServer(new Endpoint() {
 				@Override public void onOpen(Session session, EndpointConfig endpointConfig) {
@@ -111,7 +110,9 @@ public class TautRTMConnection implements MessageHandler.Whole<String> {
 	}
 
 	private void receiveMessage(JSONObject json) throws TautException {
-		System.out.format("[Rx RTM] %s\n", json); //TODO Remove
+		if(TautConnection.VERBOSE) {
+			System.out.format("[Rx RTM] %s\n", json);
+		}
 		//TODO Rx types
 		if(json.optString("type", "").equals("pong")) {
 			this.watchdog.receivePong(json);
@@ -126,7 +127,9 @@ public class TautRTMConnection implements MessageHandler.Whole<String> {
 		final int id = this.nextMessageId++;
 		json.put("id", id);
 		try {
-			System.out.format("[Tx RTM] %s\n", json.toString()); //TODO Remove
+			if(TautConnection.VERBOSE) {
+				System.out.format("[Tx RTM] %s\n", json.toString());
+			}
 			this.session.getBasicRemote().sendText(json.toString());
 		} catch(IOException e) {
 			throw new TautException(e);
