@@ -1,5 +1,7 @@
 package com.mrozekma.taut;
 
+import java.util.function.Function;
+
 public interface TautEventListener {
 	enum EventType {
 		accounts_changed, bot_added, bot_changed, channel_archive, channel_created, channel_deleted,
@@ -15,6 +17,11 @@ public interface TautEventListener {
 		user_change, user_typing
 	}
 
+	@FunctionalInterface
+	interface ChannelCreator {
+		TautAbstractChannel makeChannel(JSONObject json) throws TautException;
+	}
+
 	default void fire(TautConnection conn, JSONObject json) throws TautException {
 		final EventType type;
 		try {
@@ -24,10 +31,28 @@ public interface TautEventListener {
 			return;
 		}
 
+		ChannelCreator makeChannel = data -> {
+			if(data.has("channel")) {
+				final String id = data.getString("channel");
+				switch(id.isEmpty() ? '\0' : id.charAt(0)) {
+				case 'C':
+				case 'G':
+					return new TautChannel(conn, id);
+				case 'D':
+					if(data.has("user")) {
+						final TautUser user = new TautUser(conn, data.getString("user"));
+						return new TautDirectChannel(user);
+					}
+					break;
+				}
+			}
+			throw new TautException("Unable to construct channel");
+		};
+
 		//TODO Most if not all of the rest of these
 		switch(type) {
 		case message: {
-			final TautChannel channel = new TautChannel(conn, json.getString("channel"));
+			final TautAbstractChannel channel = makeChannel.makeChannel(json);
 			final TautMessage message = new TautMessage(channel, json);
 			this.onMessage(message);
 			break; }
@@ -37,7 +62,7 @@ public interface TautEventListener {
 			final JSONObject item = json.getJSONObject("item");
 			final String itemType = item.getString("type");
 			if(itemType.equals("message")) {
-				final TautChannel channel = new TautChannel(conn, item.getString("channel"));
+				final TautAbstractChannel channel = makeChannel.makeChannel(item);
 				this.onMessageReactionAdded(channel.messageByTs(item.getString("ts")), reaction);
 			} else if(itemType.equals("file")) {
 				this.onFileReactionAdded(new TautFile(conn, item.getString("file")), reaction);
