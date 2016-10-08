@@ -62,7 +62,7 @@ public class TautRTMConnection implements MessageHandler.Whole<String> {
 	private final Watchdog watchdog = new Watchdog();
 	private final List<TautEventListener> listeners = new LinkedList<>();
 
-	private Session session;
+	private Optional<Session> session = Optional.empty();
 	private int nextMessageId = 1;
 
 	TautRTMConnection(TautConnection conn) throws TautException {
@@ -86,16 +86,24 @@ public class TautRTMConnection implements MessageHandler.Whole<String> {
 	}
 
 	public boolean isConnected() {
-		return this.session != null && this.session.isOpen();
+		return this.session.map(Session::isOpen).orElse(false);
 	}
 
 	public void connect() throws TautException {
+		if(this.session.isPresent()) {
+			try {
+				session.get().close();
+			} catch(IOException e) {
+				throw new TautException(e);
+			}
+		}
+
 		try {
-			this.session = this.cm.connectToServer(new Endpoint() {
+			this.session = Optional.of(this.cm.connectToServer(new Endpoint() {
 				@Override public void onOpen(Session session, EndpointConfig endpointConfig) {
 					session.addMessageHandler(TautRTMConnection.this);
 				}
-			}, URI.create(this.getUrl()));
+			}, URI.create(this.getUrl())));
 		} catch(DeploymentException | IOException e) {
 			throw new TautException(e);
 		}
@@ -124,13 +132,17 @@ public class TautRTMConnection implements MessageHandler.Whole<String> {
 	}
 
 	private int sendMessage(JSONObject json) throws TautException {
+		if(!this.session.isPresent()) {
+			this.connect();
+		}
+
 		final int id = this.nextMessageId++;
 		json.put("id", id);
 		try {
 			if(TautConnection.VERBOSE) {
 				System.out.format("[Tx RTM] %s\n", json.toString());
 			}
-			this.session.getBasicRemote().sendText(json.toString());
+			this.session.get().getBasicRemote().sendText(json.toString());
 		} catch(IOException e) {
 			throw new TautException(e);
 		}
