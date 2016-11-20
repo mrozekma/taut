@@ -23,12 +23,19 @@ public class TautConnection {
 
 	private final String token;
 	private final TautUser me;
+	TautConnection historyConnection;
 
 	public TautConnection(String token) throws TautException {
 		this.token = token;
 
 		final JSONObject res = this.post("auth.test");
 		this.me = new TautUser(this, res.getString("user_id"));
+
+		this.historyConnection = this;
+	}
+
+	public void setHistoryConnection(TautConnection historyConnection) {
+		this.historyConnection = historyConnection;
 	}
 
 	JSONObject post(String route) throws TautException {

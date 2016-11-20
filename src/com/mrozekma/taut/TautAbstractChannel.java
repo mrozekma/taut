@@ -40,7 +40,7 @@ public abstract class TautAbstractChannel extends LazyLoadedObject {
 			.put("oldest", ts)
 			.put("inclusive", 1)
 			.put("count", 1);
-		final JSONObject res = this.conn.post(this.getRoutePrefix() + ".history", req);
+		final JSONObject res = this.conn.historyConnection.post(this.getRoutePrefix() + ".history", req);
 		final Optional<JSONObject> message = res.<JSONObject>streamArray("messages").findAny();
 		return new TautMessage(this, message.orElseThrow(() ->
 			new TautException(String.format("No message in channel %s with timestamp %s", this.getId(), ts)))

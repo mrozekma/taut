@@ -13,7 +13,7 @@ public class HistoryIterable implements Iterable<TautMessage> {
 	private final boolean unreads;
 
 	HistoryIterable(TautAbstractChannel channel, Optional<Date> latest, Optional<Date> oldest, boolean inclusive, int count, boolean unreads) throws TautException {
-		this.conn = channel.conn;
+		this.conn = channel.conn.historyConnection;
 		this.channel = channel;
 		this.latest = latest;
 		this.oldest = oldest;
