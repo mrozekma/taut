@@ -94,6 +94,7 @@ public class TautHTTPSServer {
 		public static class UserAction {
 			// This leaves out a bunch of the data Slack sends
 			private final String callbackId, responseUrl, actionName;
+			private final Optional<String> value;
 			private final TautChannel channel;
 			private final TautUser user;
 			private final TautMessage message;
@@ -101,15 +102,21 @@ public class TautHTTPSServer {
 			public UserAction(TautConnection conn, JSONObject json) throws TautException {
 				this.callbackId = json.getString("callback_id");
 				this.channel = new TautChannel(conn, json.getJSONObject("channel").getString("id"));
-				this.actionName = json.getJSONArray("actions").getJSONObject(0).getString("name");
 				this.user = new TautUser(conn, json.getJSONObject("user").getString("id"));
 				this.message = this.channel.messageByTs(json.getString("message_ts"));
 				this.responseUrl = json.getString("response_url");
+
+				final JSONObject action = json.getJSONArray("actions").getJSONObject(0);
+				this.actionName = action.getString("name");
+				this.value = action.has("value") ? Optional.of(action.getString("value")) :
+				             action.has("selected_options") ? Optional.of(action.getJSONArray("selected_options").getJSONObject(0).getString("value")) :
+				             Optional.empty();
 			}
 
 			public String getCallbackId() { return this.callbackId; }
 			public String getResponseUrl() { return this.responseUrl; }
 			public String getActionName() { return this.actionName; }
+			public Optional<String> getValue() { return this.value; }
 			public TautChannel getChannel() { return this.channel; }
 			public TautUser getUser() { return this.user; }
 			public TautMessage getMessage() { return this.message; }

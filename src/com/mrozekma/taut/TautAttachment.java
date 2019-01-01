@@ -1,10 +1,9 @@
 package com.mrozekma.taut;
 
 import java.awt.*;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class TautAttachment {
 	public static class Field {
@@ -29,7 +28,7 @@ public class TautAttachment {
 		}
 	}
 
-	public static class Action {
+	public static abstract class Action {
 		public static class Confirmation {
 			private final Optional<String> title, okText, dismissText;
 			private final String text;
@@ -62,41 +61,13 @@ public class TautAttachment {
 			}
 		}
 
-		public enum Style {primary, danger}
-
-		public enum Type {button}
-
 		private final String name, text;
-		private final Optional<Style> style;
-		private final Type type;
 		private final Optional<String> value;
 		private final Optional<Confirmation> confirm;
 
-		public Action(String name, String text) {
-			this(name, text, Optional.empty(), Type.button, Optional.empty(), Optional.empty());
-		}
-
-		public Action(String name, String text, String value) {
-			this(name, text, Optional.empty(), Type.button, Optional.of(value), Optional.empty());
-		}
-
-		public Action(String name, String text, Style style) {
-			this(name, text, Optional.of(style), Type.button, Optional.empty(), Optional.empty());
-		}
-
-		public Action(String name, String text, Style style, String value) {
-			this(name, text, Optional.of(style), Type.button, Optional.of(value), Optional.empty());
-		}
-
-		public Action(String name, String text, Style style, String value, Confirmation confirm) {
-			this(name, text, Optional.of(style), Type.button, Optional.of(value), Optional.of(confirm));
-		}
-
-		private Action(String name, String text, Optional<Style> style, Type type, Optional<String> value, Optional<Confirmation> confirm) {
+		protected Action(String name, String text, Optional<String> value, Optional<Confirmation> confirm) {
 			this.name = name;
 			this.text = text;
-			this.style = style;
-			this.type = type;
 			this.value = value;
 			this.confirm = confirm;
 		}
@@ -105,10 +76,111 @@ public class TautAttachment {
 			return new JSONObject()
 					.put("name", this.name)
 					.put("text", this.text)
-					.putOpt("style", this.style.map(Style::toString))
-					.put("type", this.type.toString())
 					.putOpt("value", this.value)
 					.putOpt("confirm", this.confirm.map(Confirmation::toString));
+		}
+	}
+
+	public static class ButtonAction extends Action {
+		public enum Style {primary, danger}
+
+		private final Optional<Style> style;
+
+		public ButtonAction(String name, String text) {
+			this(name, text, Optional.empty(), Optional.empty(), Optional.empty());
+		}
+
+		public ButtonAction(String name, String text, String value) {
+			this(name, text, Optional.of(value), Optional.empty(), Optional.empty());
+		}
+
+		public ButtonAction(String name, String text, Style style) {
+			this(name, text, Optional.empty(), Optional.empty(), Optional.of(style));
+		}
+
+		public ButtonAction(String name, String text, Style style, String value) {
+			this(name, text, Optional.of(value), Optional.empty(), Optional.of(style));
+		}
+
+		public ButtonAction(String name, String text, Style style, String value, Confirmation confirm) {
+			this(name, text, Optional.of(value), Optional.of(confirm), Optional.of(style));
+		}
+
+		private ButtonAction(String name, String text, Optional<String> value, Optional<Confirmation> confirm, Optional<Style> style) {
+			super(name, text, value, confirm);
+			this.style = style;
+		}
+
+		@Override JSONObject toJSON() {
+			return super.toJSON()
+					.put("type", "button")
+					.putOpt("style", this.style.map(Style::toString));
+		}
+	}
+
+	public static class MenuAction extends Action {
+		public enum DataSource {users, channels, conversations}
+
+		private final Optional<DataSource> source;
+		private final LinkedHashMap<String, LinkedHashMap<String, String>> options; // group -> value -> text
+
+		public MenuAction(String name, String text) {
+			this(name, text, Optional.empty(), Optional.empty(), Optional.empty());
+		}
+
+		public MenuAction(String name, String text, String value) {
+			this(name, text, Optional.of(value), Optional.empty(), Optional.empty());
+		}
+
+		public MenuAction(String name, String text, DataSource source) {
+			this(name, text, Optional.empty(), Optional.empty(), Optional.of(source));
+		}
+
+		public MenuAction(String name, String text, DataSource source, String value) {
+			this(name, text, Optional.of(value), Optional.empty(), Optional.of(source));
+		}
+
+		public MenuAction(String name, String text, DataSource source, String value, Confirmation confirm) {
+			this(name, text, Optional.of(value), Optional.of(confirm), Optional.of(source));
+		}
+
+		private MenuAction(String name, String text, Optional<String> value, Optional<Confirmation> confirm, Optional<DataSource> source) {
+			super(name, text, value, confirm);
+			this.source = source;
+			this.options = new LinkedHashMap<>();
+		}
+
+		public void addOption(String value, String text) {
+			this.addOption(null, value, text);
+		}
+
+		public void addOption(String group, String value, String text) {
+			this.options.computeIfAbsent(group, g -> new LinkedHashMap<>()).put(value, text);
+		}
+
+		private JSONArray makeOptionsArray(LinkedHashMap<String, String> m) {
+			return new JSONArray(m.entrySet().stream().map(e -> new JSONObject().put("value", e.getKey()).put("text", e.getValue())).collect(Collectors.toList()));
+		}
+
+		@Override JSONObject toJSON() {
+			final JSONObject rtn =  super.toJSON()
+					.put("type", "select")
+					.put("data_source", this.source.map(DataSource::toString));
+			switch(this.options.size()) {
+			case 0:
+				throw new IllegalStateException("No options");
+			case 1:
+				if(this.options.containsKey(null)) {
+					rtn.put("options", this.makeOptionsArray(this.options.get(null)));
+					break;
+				}
+				// else fallthrough
+			default:
+				List<JSONObject> groups = this.options.entrySet().stream().map(e -> new JSONObject().put("text", e.getKey()).put("objects", this.makeOptionsArray(e.getValue()))).collect(Collectors.toList());
+				rtn.put("option_groups", new JSONArray(groups));
+				break;
+			}
+			return rtn;
 		}
 	}
 
